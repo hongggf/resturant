@@ -14,7 +14,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   flyway:
     enabled: true
@@ -30,5 +29,7 @@ server:
 
 app:
   jwt:
+    # Dev-only default. In production, set JWT_SECRET in the environment —
+    # the app must not run with this placeholder value.
     secret: ${JWT_SECRET:your-256-bit-secret-key-here-change-in-production}
     expiration-ms: 86400000    # 24 hours
