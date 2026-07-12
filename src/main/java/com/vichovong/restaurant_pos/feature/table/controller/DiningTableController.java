@@ -2,9 +2,12 @@ package com.vichovong.restaurant_pos.feature.table.controller;
 
 import com.vichovong.restaurant_pos.common.dto.ApiResponse;
 import com.vichovong.restaurant_pos.common.dto.PageResponse;
+import com.vichovong.restaurant_pos.feature.table.dto.StaffSessionResponse;
 import com.vichovong.restaurant_pos.feature.table.dto.TableCreateRequest;
+import com.vichovong.restaurant_pos.feature.table.dto.TableOverviewResponse;
 import com.vichovong.restaurant_pos.feature.table.dto.TableResponse;
 import com.vichovong.restaurant_pos.feature.table.dto.TableUpdateRequest;
+import com.vichovong.restaurant_pos.feature.table.service.CashierTableService;
 import com.vichovong.restaurant_pos.feature.table.service.DiningTableService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -30,6 +34,21 @@ import java.util.UUID;
 public class DiningTableController {
 
     private final DiningTableService diningTableService;
+    private final CashierTableService cashierTableService;
+
+    // Polled by the cashier status board every 3-5s (cashier spec §2)
+    @GetMapping("/overview")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CASHIER')")
+    public ResponseEntity<ApiResponse<List<TableOverviewResponse>>> getOverview() {
+        return ResponseEntity.ok(ApiResponse.success(cashierTableService.getOverview()));
+    }
+
+    @PostMapping("/{id}/session")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CASHIER')")
+    public ResponseEntity<ApiResponse<StaffSessionResponse>> openSession(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success("Session ready",
+                cashierTableService.openSession(id)));
+    }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'CASHIER')")

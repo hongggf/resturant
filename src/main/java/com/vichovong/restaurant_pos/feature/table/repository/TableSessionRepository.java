@@ -21,6 +21,8 @@ public interface TableSessionRepository extends JpaRepository<TableSession, UUID
 
     List<TableSession> findByStatusAndLastActivityAtBefore(SessionStatus status, Instant cutoff);
 
+    List<TableSession> findByStatus(SessionStatus status);
+
     // Serializes round-send and close-out against concurrent cart mutations (spec §B2)
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from TableSession s where s.id = :id")

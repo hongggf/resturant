@@ -1,10 +1,8 @@
 package com.vichovong.restaurant_pos.feature.order.service.impl;
 
 import com.vichovong.restaurant_pos.common.exception.ApiException;
-import com.vichovong.restaurant_pos.feature.cart.dto.CartLineResponse;
 import com.vichovong.restaurant_pos.feature.cart.dto.CartResponse;
 import com.vichovong.restaurant_pos.feature.cart.dto.CartSelectionRequest;
-import com.vichovong.restaurant_pos.feature.cart.dto.CartSelectionResponse;
 import com.vichovong.restaurant_pos.feature.cart.entity.CartLineItem;
 import com.vichovong.restaurant_pos.feature.cart.repository.CartLineItemRepository;
 import com.vichovong.restaurant_pos.feature.cart.service.CartPricingService;
@@ -12,13 +10,9 @@ import com.vichovong.restaurant_pos.feature.cart.service.CartValidationService;
 import com.vichovong.restaurant_pos.feature.currency.service.ExchangeRateService;
 import com.vichovong.restaurant_pos.feature.menu.entity.MenuItem;
 import com.vichovong.restaurant_pos.feature.order.dto.GuestOrdersResponse;
-import com.vichovong.restaurant_pos.feature.order.dto.OrderRoundLineResponse;
-import com.vichovong.restaurant_pos.feature.order.dto.OrderRoundResponse;
-import com.vichovong.restaurant_pos.feature.order.dto.OrderRoundSelectionResponse;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
-import com.vichovong.restaurant_pos.feature.order.entity.OrderRoundLineItem;
-import com.vichovong.restaurant_pos.feature.order.entity.OrderRoundModifierSelection;
 import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.mapper.OrderRoundMapper;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.order.service.GuestOrderService;
 import com.vichovong.restaurant_pos.feature.table.entity.SessionStatus;
@@ -50,6 +44,8 @@ public class GuestOrderServiceImpl implements GuestOrderService {
     private final CartValidationService cartValidationService;
     private final CartPricingService cartPricingService;
     private final ExchangeRateService exchangeRateService;
+    private final OrderRoundSnapshotter orderRoundSnapshotter;
+    private final OrderRoundMapper orderRoundMapper;
 
     @Override
     @Transactional
@@ -74,17 +70,8 @@ public class GuestOrderServiceImpl implements GuestOrderService {
         }
 
         CartResponse priced = cartPricingService.price(session, lines);
-
-        OrderRound round = new OrderRound();
-        round.setSession(session);
-        round.setRoundNumber(orderRoundRepository.findMaxRoundNumber(sessionId) + 1);
-        round.setStatus(RoundStatus.SENT);
-        round.setSubtotal(priced.subtotal());
-        round.setVatRate(priced.vatRate());
-        round.setVatAmount(priced.vatAmount());
-        round.setGrandTotal(priced.grandTotal());
-        round.setSentAt(Instant.now());
-        snapshotLines(round, lines, priced.lines());
+        OrderRound round = orderRoundSnapshotter.snapshot(session,
+                orderRoundRepository.findMaxRoundNumber(sessionId) + 1, lines, priced);
 
         orderRoundRepository.save(round);
         cartLineItemRepository.deleteBySessionId(sessionId);
@@ -105,44 +92,6 @@ public class GuestOrderServiceImpl implements GuestOrderService {
                 .toList();
     }
 
-    /**
-     * Copies names and prices from the priced cart into snapshot rows (spec §B core
-     * invariant) so later menu edits never change this round. The priced lines are
-     * built from {@code lines} in order, so index pairing is safe.
-     */
-    private void snapshotLines(OrderRound round, List<CartLineItem> lines, List<CartLineResponse> pricedLines) {
-        for (int i = 0; i < lines.size(); i++) {
-            CartLineItem cartLine = lines.get(i);
-            CartLineResponse priced = pricedLines.get(i);
-
-            OrderRoundLineItem line = new OrderRoundLineItem();
-            line.setOrderRound(round);
-            line.setMenuItem(cartLine.getMenuItem());
-            line.setNameEn(priced.nameEn());
-            line.setNameKm(priced.nameKm());
-            line.setBasePrice(priced.basePrice());
-            line.setUnitPrice(priced.unitPrice());
-            line.setQuantity(priced.quantity());
-            line.setLineTotal(priced.lineTotal());
-            line.setRemark(priced.remark());
-
-            List<CartSelectionResponse> pricedSelections = priced.selections();
-            for (int j = 0; j < pricedSelections.size(); j++) {
-                CartSelectionResponse pricedSelection = pricedSelections.get(j);
-
-                OrderRoundModifierSelection selection = new OrderRoundModifierSelection();
-                selection.setOrderRoundLineItem(line);
-                selection.setModifierOption(cartLine.getSelections().get(j).getModifierOption());
-                selection.setNameEn(pricedSelection.nameEn());
-                selection.setNameKm(pricedSelection.nameKm());
-                selection.setUnitPrice(pricedSelection.unitPrice());
-                selection.setQuantity(pricedSelection.quantity());
-                line.getSelections().add(selection);
-            }
-            round.getLines().add(line);
-        }
-    }
-
     private GuestOrdersResponse buildOrdersResponse(TableSession session) {
         List<OrderRound> rounds = orderRoundRepository.findBySessionIdOrderByRoundNumberAsc(session.getId());
 
@@ -153,50 +102,10 @@ public class GuestOrderServiceImpl implements GuestOrderService {
 
         return new GuestOrdersResponse(
                 session.getId(),
-                rounds.stream().map(this::toRoundResponse).toList(),
+                rounds.stream().map(orderRoundMapper::toRoundResponse).toList(),
                 BASE_CURRENCY,
                 runningGrandTotal,
                 toKhr(runningGrandTotal)
-        );
-    }
-
-    private OrderRoundResponse toRoundResponse(OrderRound round) {
-        return new OrderRoundResponse(
-                round.getId(),
-                round.getRoundNumber(),
-                round.getStatus(),
-                round.getSubtotal(),
-                round.getVatRate(),
-                round.getVatAmount(),
-                round.getGrandTotal(),
-                round.getSentAt(),
-                round.getLines().stream().map(this::toLineResponse).toList()
-        );
-    }
-
-    private OrderRoundLineResponse toLineResponse(OrderRoundLineItem line) {
-        return new OrderRoundLineResponse(
-                line.getId(),
-                line.getMenuItem() == null ? null : line.getMenuItem().getId(),
-                line.getNameEn(),
-                line.getNameKm(),
-                line.getBasePrice(),
-                line.getUnitPrice(),
-                line.getQuantity(),
-                line.getLineTotal(),
-                line.getRemark(),
-                line.isVoided(),
-                line.getSelections().stream().map(this::toSelectionResponse).toList()
-        );
-    }
-
-    private OrderRoundSelectionResponse toSelectionResponse(OrderRoundModifierSelection selection) {
-        return new OrderRoundSelectionResponse(
-                selection.getModifierOption() == null ? null : selection.getModifierOption().getId(),
-                selection.getNameEn(),
-                selection.getNameKm(),
-                selection.getUnitPrice(),
-                selection.getQuantity()
         );
     }
 

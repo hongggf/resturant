@@ -11,7 +11,6 @@ import com.vichovong.restaurant_pos.feature.table.repository.TableSessionReposit
 import com.vichovong.restaurant_pos.feature.table.service.GuestSessionService;
 import com.vichovong.restaurant_pos.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +24,7 @@ public class GuestSessionServiceImpl implements GuestSessionService {
 
     private final DiningTableRepository diningTableRepository;
     private final TableSessionRepository tableSessionRepository;
+    private final TableSessionManager tableSessionManager;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
@@ -33,7 +33,7 @@ public class GuestSessionServiceImpl implements GuestSessionService {
                 .filter(DiningTable::isActive)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Invalid QR code"));
 
-        TableSession session = findOrCreateActiveSession(table);
+        TableSession session = tableSessionManager.findOrCreateActiveSession(table);
         String token = jwtTokenProvider.generateGuestToken(session.getId());
         return new GuestSessionResponse(
                 token,
@@ -53,29 +53,4 @@ public class GuestSessionServiceImpl implements GuestSessionService {
         return session;
     }
 
-    // Deliberately not @Transactional: if the insert loses the one-ACTIVE-per-table race,
-    // the constraint violation must not doom an enclosing transaction before the re-fetch.
-    private TableSession findOrCreateActiveSession(DiningTable table) {
-        return tableSessionRepository.findByTableIdAndStatus(table.getId(), SessionStatus.ACTIVE)
-                .map(this::touch)
-                .orElseGet(() -> {
-                    try {
-                        TableSession session = new TableSession();
-                        session.setTable(table);
-                        session.setStatus(SessionStatus.ACTIVE);
-                        session.setLastActivityAt(Instant.now());
-                        return tableSessionRepository.save(session);
-                    } catch (DataIntegrityViolationException e) {
-                        // Another phone at the same table created the session first — share it
-                        return tableSessionRepository.findByTableIdAndStatus(table.getId(), SessionStatus.ACTIVE)
-                                .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT,
-                                        "Could not open a session for this table, please rescan"));
-                    }
-                });
-    }
-
-    private TableSession touch(TableSession session) {
-        session.setLastActivityAt(Instant.now());
-        return tableSessionRepository.save(session);
-    }
 }

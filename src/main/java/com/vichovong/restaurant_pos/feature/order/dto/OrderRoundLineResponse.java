@@ -16,6 +16,7 @@ public record OrderRoundLineResponse(
         BigDecimal lineTotal,
         String remark,
         boolean voided,
+        String voidReason,
         List<OrderRoundSelectionResponse> selections
 ) {
 }

@@ -42,3 +42,6 @@ app:
   tax:
     # VAT applied to guest carts; moves to system settings in Phase 11
     rate: ${TAX_RATE:0.10}
+  restaurant:
+    # Shown on receipts; moves to system settings in Phase 11
+    name: ${RESTAURANT_NAME:KaiXin Restaurant}
