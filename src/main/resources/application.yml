@@ -33,3 +33,5 @@ app:
     # the app must not run with this placeholder value.
     secret: ${JWT_SECRET:your-256-bit-secret-key-here-change-in-production}
     expiration-ms: 86400000    # 24 hours
+  upload:
+    dir: ${UPLOAD_DIR:uploads}
