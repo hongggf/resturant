@@ -3,6 +3,19 @@
 > Phase-by-phase build plan. Conventions, tech stack, and project structure live in `CLAUDE.md`.
 > When starting a phase, implement it against the conventions in CLAUDE.md.
 
+> **Scope update (July 2026):** the product is QR-at-table customer ordering + a cashier screen.
+> Phases 4–7 below are superseded/reshaped by two specs — build from the specs, not from the
+> original phase text (kept for history):
+>
+> - `docs/CUSTOMER_ORDERING_SPEC.md` — Part A: **modifiers (current scope, replaces Phase 4)**;
+>   Part B (deferred): tables/sessions, draft cart, order rounds, promo banners (steps C2–C5,
+>   migrations V5–V8).
+> - `docs/CASHIER_SPEC.md` — table status board, order queue, void/cancel, cashier manual
+>   ordering, payment & close-out (reshapes Phases 6–7).
+>
+> Phases 0A–3 are built. Phases 8–11 (receipts, audit, reports, settings) still apply on top.
+> Phase 5's discount-promotion engine is deferred (promo *banners* moved to the customer spec).
+
 ---
 
 ## Build Phases
@@ -99,6 +112,11 @@
 
 ### Phase 4 — Modifier Management
 
+> **Superseded — build from `docs/CUSTOMER_ORDERING_SPEC.md` Part A.** Key differences from the
+> text below: `minChoice`/`maxChoice` instead of `required`/`multiSelect` (`minChoice >= 1` ⇒
+> required), options carry `unitPrice`/`imageUrl`/`packSize`/`available`, join table is
+> `menu_item_modifier_groups` with per-item `sortOrder`.
+
 **Goal:** Configurable modifiers (size, temperature, sugar, ice) linked to menu items.
 
 **Entities:**
@@ -122,6 +140,9 @@
 
 ### Phase 5 — Promotion Management
 
+> **Deferred.** Display-only promo *banners* moved to `docs/CUSTOMER_ORDERING_SPEC.md` (step C5).
+> The discount engine below is postponed until after the customer + cashier modules ship.
+
 **Goal:** Flexible promotions that the order module can apply.
 
 **Entities:**
@@ -143,6 +164,12 @@
 ---
 
 ### Phase 6 — POS & Order Processing
+
+> **Superseded.** Replaced by tables/sessions, draft cart, and immutable order rounds
+> (`docs/CUSTOMER_ORDERING_SPEC.md` Part B, steps C2–C4) plus the cashier workflow — status
+> board, FIFO round queue, void-not-delete, manual ordering (`docs/CASHIER_SPEC.md` §1–§5).
+> The `Order`/`OrderItem` entities below do not get built; `OrderRound` + snapshot line
+> items take their place.
 
 **Goal:** Core order flow — the heart of the POS.
 
@@ -176,6 +203,11 @@
 ---
 
 ### Phase 7 — Payment Processing
+
+> **Reshaped by `docs/CASHIER_SPEC.md` §6.** Payments attach to a `TableSession` (the whole
+> visit), not a single order. v1 methods: `CASH` (change in USD + KHR) and `QR` (manual
+> verification, no KHQR integration — reference note only). Single payment per session in v1;
+> split payments and card deferred. Payment confirm closes the session and completes its rounds.
 
 **Goal:** Accept payments against orders.
 
