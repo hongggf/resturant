@@ -4,6 +4,7 @@ import com.vichovong.restaurant_pos.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -29,6 +30,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/login").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // QR scan entry point — guests have no credentials yet
+                        .requestMatchers(HttpMethod.POST, "/api/v1/guest/sessions").permitAll()
+                        // Menu/modifier images render in <img> tags, which cannot send a JWT
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/v1/guest/**").hasRole("GUEST")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

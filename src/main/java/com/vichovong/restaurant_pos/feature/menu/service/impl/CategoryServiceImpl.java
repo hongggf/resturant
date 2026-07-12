@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -29,6 +30,13 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public PageResponse<CategoryResponse> getAll(Pageable pageable) {
         return PageResponse.from(categoryRepository.findAll(pageable).map(categoryMapper::toResponse));
+    }
+
+    @Override
+    public List<CategoryResponse> getActive() {
+        return categoryRepository.findByActiveTrueOrderBySortOrderAsc().stream()
+                .map(categoryMapper::toResponse)
+                .toList();
     }
 
     @Override
