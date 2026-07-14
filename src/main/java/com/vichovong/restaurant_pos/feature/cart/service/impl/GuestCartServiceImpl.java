@@ -68,6 +68,9 @@ public class GuestCartServiceImpl implements GuestCartService {
         line.setQuantity(request.quantity());
         line.setRemark(request.remark());
         line.getSelections().clear();
+        // Flush orphan deletes before re-inserting: Hibernate orders inserts first,
+        // which breaks uq_cart_line_modifier_option when a selection is kept
+        cartLineItemRepository.saveAndFlush(line);
         applySelections(line, request.selections(), options);
 
         cartLineItemRepository.save(line);
