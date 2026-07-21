@@ -2,25 +2,24 @@ package com.vichovong.restaurant_pos.feature.payment.service.impl;
 
 import com.vichovong.restaurant_pos.common.exception.ApiException;
 import com.vichovong.restaurant_pos.feature.currency.service.ExchangeRateService;
-import com.vichovong.restaurant_pos.feature.order.dto.OrderRoundResponse;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
 import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
-import com.vichovong.restaurant_pos.feature.order.mapper.OrderRoundMapper;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.payment.dto.BillResponse;
 import com.vichovong.restaurant_pos.feature.payment.dto.PaymentRequest;
-import com.vichovong.restaurant_pos.feature.payment.dto.PaymentResponse;
 import com.vichovong.restaurant_pos.feature.payment.dto.ReceiptResponse;
 import com.vichovong.restaurant_pos.feature.payment.entity.Payment;
 import com.vichovong.restaurant_pos.feature.payment.entity.PaymentMethod;
 import com.vichovong.restaurant_pos.feature.payment.repository.PaymentRepository;
+import com.vichovong.restaurant_pos.feature.payment.service.BillingService;
 import com.vichovong.restaurant_pos.feature.payment.service.SessionPaymentService;
+import com.vichovong.restaurant_pos.feature.receipt.entity.Receipt;
+import com.vichovong.restaurant_pos.feature.receipt.service.ReceiptService;
 import com.vichovong.restaurant_pos.feature.table.entity.SessionStatus;
 import com.vichovong.restaurant_pos.feature.table.entity.TableSession;
 import com.vichovong.restaurant_pos.feature.table.repository.TableSessionRepository;
 import com.vichovong.restaurant_pos.feature.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,31 +30,27 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static com.vichovong.restaurant_pos.feature.payment.service.impl.BillingServiceImpl.BASE_CURRENCY;
+import static com.vichovong.restaurant_pos.feature.payment.service.impl.BillingServiceImpl.DISPLAY_CURRENCY;
+
 @Service
 @RequiredArgsConstructor
 public class SessionPaymentServiceImpl implements SessionPaymentService {
-
-    // v1: single-restaurant deployment, bills are USD; KHR is the dual-display/tender currency
-    private static final String BASE_CURRENCY = "USD";
-    private static final String DISPLAY_CURRENCY = "KHR";
 
     private final TableSessionRepository tableSessionRepository;
     private final OrderRoundRepository orderRoundRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final ExchangeRateService exchangeRateService;
-    private final OrderRoundMapper orderRoundMapper;
-
-    // Moves to system settings in Phase 11
-    @Value("${app.restaurant.name}")
-    private String restaurantName;
+    private final BillingService billingService;
+    private final ReceiptService receiptService;
 
     @Override
     @Transactional(readOnly = true)
     public BillResponse getBill(UUID sessionId) {
         TableSession session = tableSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Session not found: " + sessionId));
-        return buildBill(session);
+        return billingService.buildBill(session);
     }
 
     @Override
@@ -91,13 +86,9 @@ public class SessionPaymentServiceImpl implements SessionPaymentService {
         session.setStatus(SessionStatus.CLOSED);
         session.setClosedAt(now);
 
-        return new ReceiptResponse(
-                restaurantName,
-                session.getCreatedAt(),
-                now,
-                buildBill(session),
-                toPaymentResponse(payment, username)
-        );
+        // Receipt is numbered in the same transaction — no paid session without one
+        Receipt receipt = receiptService.createForPayment(payment);
+        return billingService.buildReceiptPayload(payment, receipt.getId(), receipt.getReceiptNumber());
     }
 
     private Payment buildPayment(TableSession session, PaymentRequest request,
@@ -117,7 +108,7 @@ public class SessionPaymentServiceImpl implements SessionPaymentService {
             payment.setAmountTendered(billTotal);
             payment.setTenderedCurrency(BASE_CURRENCY);
             payment.setChangeUsd(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
-            payment.setChangeKhr(toKhrOrNull(BigDecimal.ZERO));
+            payment.setChangeKhr(billingService.toKhrOrNull(BigDecimal.ZERO));
         }
         return payment;
     }
@@ -136,7 +127,7 @@ public class SessionPaymentServiceImpl implements SessionPaymentService {
                 BigDecimal changeUsd = request.amountTendered().subtract(billTotal)
                         .setScale(2, RoundingMode.HALF_UP);
                 payment.setChangeUsd(changeUsd);
-                payment.setChangeKhr(toKhrOrNull(changeUsd));
+                payment.setChangeKhr(billingService.toKhrOrNull(changeUsd));
             }
             case "KHR" -> {
                 // Tendering KHR requires a configured rate — this propagates if none exists
@@ -158,69 +149,6 @@ public class SessionPaymentServiceImpl implements SessionPaymentService {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Amount tendered (" + tendered + " " + currency + ") is less than the bill total ("
                             + dueInTenderCurrency + " " + currency + " / " + billTotalUsd + " USD)");
-        }
-    }
-
-    private BillResponse buildBill(TableSession session) {
-        List<OrderRound> rounds = orderRoundRepository
-                .findBySessionIdOrderByRoundNumberAsc(session.getId()).stream()
-                .filter(r -> r.getStatus() != RoundStatus.CANCELLED)
-                .toList();
-
-        BigDecimal subtotal = sum(rounds, OrderRound::getSubtotal);
-        BigDecimal vatAmount = sum(rounds, OrderRound::getVatAmount);
-        BigDecimal grandTotal = sum(rounds, OrderRound::getGrandTotal);
-
-        return new BillResponse(
-                session.getId(),
-                session.getTable().getTableNumber(),
-                session.getStatus(),
-                rounds.stream().map(this::toBillRound).toList(),
-                BASE_CURRENCY,
-                subtotal,
-                vatAmount,
-                grandTotal,
-                toKhrOrNull(grandTotal)
-        );
-    }
-
-    /** The bill and receipt show non-voided lines only (cashier spec §6). */
-    private OrderRoundResponse toBillRound(OrderRound round) {
-        OrderRoundResponse full = orderRoundMapper.toRoundResponse(round);
-        return new OrderRoundResponse(
-                full.id(), full.roundNumber(), full.status(),
-                full.subtotal(), full.vatRate(), full.vatAmount(), full.grandTotal(),
-                full.sentAt(),
-                full.lines().stream().filter(l -> !l.voided()).toList()
-        );
-    }
-
-    private PaymentResponse toPaymentResponse(Payment payment, String username) {
-        return new PaymentResponse(
-                payment.getId(),
-                payment.getMethod(),
-                payment.getBillTotal(),
-                payment.getAmountTendered(),
-                payment.getTenderedCurrency(),
-                payment.getChangeUsd(),
-                payment.getChangeKhr(),
-                payment.getReferenceNote(),
-                username,
-                payment.getPaidAt()
-        );
-    }
-
-    private static BigDecimal sum(List<OrderRound> rounds,
-                                  java.util.function.Function<OrderRound, BigDecimal> field) {
-        return rounds.stream().map(field).reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private BigDecimal toKhrOrNull(BigDecimal usdAmount) {
-        try {
-            return exchangeRateService.convert(usdAmount, BASE_CURRENCY, DISPLAY_CURRENCY);
-        } catch (ApiException e) {
-            // No configured rate must not break the bill — the client just skips dual display
-            return null;
         }
     }
 }
