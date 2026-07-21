@@ -23,8 +23,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 /**
- * Shared draft cart for the guest's table. The session id always comes from the
- * guest token — never from the URL — so one table cannot address another's cart.
+ * Per-device draft cart. Session and device ids always come from the guest
+ * token — never from the URL — so no other table or phone can address this
+ * draft. Writes return 403 once the device has sent its round (re-scan to
+ * order more); reading the (now empty) cart stays allowed.
  */
 @RestController
 @RequestMapping("/api/v1/guest/cart")
@@ -37,7 +39,8 @@ public class GuestCartController {
     @GetMapping
     public ResponseEntity<ApiResponse<CartResponse>> getCart(
             @AuthenticationPrincipal GuestPrincipal guest) {
-        return ResponseEntity.ok(ApiResponse.success(guestCartService.getCart(guest.sessionId())));
+        return ResponseEntity.ok(ApiResponse.success(
+                guestCartService.getCart(guest.sessionId(), guest.deviceId())));
     }
 
     @PostMapping("/lines")
@@ -45,7 +48,8 @@ public class GuestCartController {
             @AuthenticationPrincipal GuestPrincipal guest,
             @Valid @RequestBody CartLineAddRequest request) {
         return ResponseEntity.ok(
-                ApiResponse.success("Line added", guestCartService.addLine(guest.sessionId(), request)));
+                ApiResponse.success("Line added",
+                        guestCartService.addLine(guest.sessionId(), guest.deviceId(), request)));
     }
 
     @PutMapping("/lines/{lineId}")
@@ -54,7 +58,8 @@ public class GuestCartController {
             @PathVariable UUID lineId,
             @Valid @RequestBody CartLineUpdateRequest request) {
         return ResponseEntity.ok(
-                ApiResponse.success("Line updated", guestCartService.updateLine(guest.sessionId(), lineId, request)));
+                ApiResponse.success("Line updated",
+                        guestCartService.updateLine(guest.sessionId(), guest.deviceId(), lineId, request)));
     }
 
     @DeleteMapping("/lines/{lineId}")
@@ -62,13 +67,15 @@ public class GuestCartController {
             @AuthenticationPrincipal GuestPrincipal guest,
             @PathVariable UUID lineId) {
         return ResponseEntity.ok(
-                ApiResponse.success("Line removed", guestCartService.removeLine(guest.sessionId(), lineId)));
+                ApiResponse.success("Line removed",
+                        guestCartService.removeLine(guest.sessionId(), guest.deviceId(), lineId)));
     }
 
     @DeleteMapping
     public ResponseEntity<ApiResponse<CartResponse>> clear(
             @AuthenticationPrincipal GuestPrincipal guest) {
         return ResponseEntity.ok(
-                ApiResponse.success("Cart cleared", guestCartService.clear(guest.sessionId())));
+                ApiResponse.success("Cart cleared",
+                        guestCartService.clear(guest.sessionId(), guest.deviceId())));
     }
 }

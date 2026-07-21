@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -34,8 +35,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (token != null && jwtTokenProvider.validateToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
             UsernamePasswordAuthenticationToken authentication;
             if (jwtTokenProvider.isGuestToken(token)) {
-                // Guests have no user record — the principal is just the session id from the token
-                GuestPrincipal principal = new GuestPrincipal(jwtTokenProvider.getSessionId(token));
+                // Guests have no user record — the principal is the session + device ids
+                // from the token. Tokens minted before device ids existed lack the claim;
+                // reject them so the client falls back to a re-scan.
+                UUID deviceId = jwtTokenProvider.getDeviceId(token);
+                if (deviceId == null) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+                GuestPrincipal principal = new GuestPrincipal(jwtTokenProvider.getSessionId(token), deviceId);
                 authentication = new UsernamePasswordAuthenticationToken(principal, null,
                         List.of(new SimpleGrantedAuthority(SecurityConstants.ROLE_PREFIX + SecurityConstants.ROLE_GUEST)));
             } else {

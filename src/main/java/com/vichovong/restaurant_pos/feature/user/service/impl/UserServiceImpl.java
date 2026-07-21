@@ -14,6 +14,8 @@ import com.vichovong.restaurant_pos.feature.user.repository.UserRepository;
 import com.vichovong.restaurant_pos.feature.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,6 +70,9 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse update(UUID id, UserUpdateRequest request) {
         User user = findUser(id);
+        if (!request.roles().contains(RoleName.ADMIN) || !request.enabled()) {
+            ensureNotLastAdmin(user, "Cannot remove the admin role from or disable the last admin account");
+        }
         user.setEmail(request.email());
         user.setEnabled(request.enabled());
         user.setRoles(resolveRoles(request.roles()));
@@ -78,6 +83,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void delete(UUID id) {
         User user = findUser(id);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && user.getUsername().equals(auth.getName())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "You cannot delete your own account");
+        }
+        ensureNotLastAdmin(user, "Cannot delete the last admin account");
         userRepository.delete(user);
     }
 
@@ -86,6 +96,14 @@ public class UserServiceImpl implements UserService {
     public void resetPassword(UUID id, PasswordResetRequest request) {
         User user = findUser(id);
         user.setPassword(passwordEncoder.encode(request.newPassword()));
+    }
+
+    private void ensureNotLastAdmin(User user, String message) {
+        boolean isEnabledAdmin = user.isEnabled() && user.getRoles().stream()
+                .anyMatch(role -> role.getName() == RoleName.ADMIN);
+        if (isEnabledAdmin && userRepository.countByRolesNameAndEnabledTrue(RoleName.ADMIN) <= 1) {
+            throw new ApiException(HttpStatus.CONFLICT, message);
+        }
     }
 
     private User findUser(UUID id) {

@@ -7,14 +7,15 @@
 > Phases 4–7 below are superseded/reshaped by two specs — build from the specs, not from the
 > original phase text (kept for history):
 >
-> - `docs/CUSTOMER_ORDERING_SPEC.md` — Part A: **modifiers (current scope, replaces Phase 4)**;
->   Part B (deferred): tables/sessions, draft cart, order rounds, promo banners (steps C2–C5,
->   migrations V5–V8).
+> - `docs/CUSTOMER_ORDERING_SPEC.md` — Part A: modifiers (replaces Phase 4, ✅ built);
+>   Part B: tables/sessions, draft cart, order rounds (steps C2–C4, migrations V5–V7, ✅ built —
+>   per-device carts / one send per device added in V10); promo banners (C5) still pending.
 > - `docs/CASHIER_SPEC.md` — table status board, order queue, void/cancel, cashier manual
->   ordering, payment & close-out (reshapes Phases 6–7).
+>   ordering, payment & close-out (reshapes Phases 6–7; ✅ built, migration V8).
 >
-> Phases 0A–3 are built. Phases 8–11 (receipts, audit, reports, settings) still apply on top.
-> Phase 5's discount-promotion engine is deferred (promo *banners* moved to the customer spec).
+> Phases 0A–3 are built; receipts (Phase 8) are in progress (migration V9). Phases 9–11
+> (audit, reports, settings) still apply on top. Phase 5's discount-promotion engine is
+> deferred (promo *banners* moved to the customer spec).
 
 ---
 

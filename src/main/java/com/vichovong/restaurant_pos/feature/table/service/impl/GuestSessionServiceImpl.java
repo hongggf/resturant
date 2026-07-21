@@ -34,7 +34,9 @@ public class GuestSessionServiceImpl implements GuestSessionService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Invalid QR code"));
 
         TableSession session = tableSessionManager.findOrCreateActiveSession(table);
-        String token = jwtTokenProvider.generateGuestToken(session.getId());
+        // Each scan is one ordering turn: a fresh device id whose write access is
+        // spent once it sends a round; re-scanning mints the next one
+        String token = jwtTokenProvider.generateGuestToken(session.getId(), UUID.randomUUID());
         return new GuestSessionResponse(
                 token,
                 jwtTokenProvider.getGuestExpirationMs(),

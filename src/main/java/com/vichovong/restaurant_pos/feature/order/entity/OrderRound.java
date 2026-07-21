@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Immutable send-time snapshot of one cart send (spec §B core invariant).
@@ -44,6 +45,11 @@ public class OrderRound extends BaseEntity {
 
     @Column(name = "round_number", nullable = false)
     private int roundNumber;
+
+    // Guest device that sent this round; null for cashier-submitted rounds.
+    // A device with a round is "spent" — it can no longer draft or send.
+    @Column(name = "device_id")
+    private UUID deviceId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

@@ -13,6 +13,7 @@ import com.vichovong.restaurant_pos.feature.cart.service.CartValidationService;
 import com.vichovong.restaurant_pos.feature.cart.service.GuestCartService;
 import com.vichovong.restaurant_pos.feature.menu.entity.MenuItem;
 import com.vichovong.restaurant_pos.feature.modifier.entity.ModifierOption;
+import com.vichovong.restaurant_pos.feature.order.service.impl.SpentDeviceGuard;
 import com.vichovong.restaurant_pos.feature.table.entity.TableSession;
 import com.vichovong.restaurant_pos.feature.table.service.GuestSessionService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Draft carts are private per device (one scan = one device = one ordering turn);
+ * writes are blocked once the device has sent its round. Reads stay open.
+ */
 @Service
 @RequiredArgsConstructor
 public class GuestCartServiceImpl implements GuestCartService {
@@ -31,37 +36,41 @@ public class GuestCartServiceImpl implements GuestCartService {
     private final GuestSessionService guestSessionService;
     private final CartValidationService cartValidationService;
     private final CartPricingService cartPricingService;
+    private final SpentDeviceGuard spentDeviceGuard;
 
     @Override
     @Transactional
-    public CartResponse getCart(UUID sessionId) {
+    public CartResponse getCart(UUID sessionId, UUID deviceId) {
         TableSession session = guestSessionService.requireActiveSession(sessionId);
-        return priceCart(session);
+        return priceCart(session, deviceId);
     }
 
     @Override
     @Transactional
-    public CartResponse addLine(UUID sessionId, CartLineAddRequest request) {
+    public CartResponse addLine(UUID sessionId, UUID deviceId, CartLineAddRequest request) {
         TableSession session = guestSessionService.requireActiveSession(sessionId);
+        spentDeviceGuard.requireNotSpent(deviceId);
         MenuItem item = cartValidationService.requireOrderableItem(request.menuItemId());
         List<ModifierOption> options = cartValidationService.validateSelections(item, request.selections());
 
         CartLineItem line = new CartLineItem();
         line.setSession(session);
+        line.setDeviceId(deviceId);
         line.setMenuItem(item);
         line.setQuantity(request.quantity());
         line.setRemark(request.remark());
         applySelections(line, request.selections(), options);
 
         cartLineItemRepository.save(line);
-        return priceCart(session);
+        return priceCart(session, deviceId);
     }
 
     @Override
     @Transactional
-    public CartResponse updateLine(UUID sessionId, UUID lineId, CartLineUpdateRequest request) {
+    public CartResponse updateLine(UUID sessionId, UUID deviceId, UUID lineId, CartLineUpdateRequest request) {
         TableSession session = guestSessionService.requireActiveSession(sessionId);
-        CartLineItem line = requireLine(lineId, sessionId);
+        spentDeviceGuard.requireNotSpent(deviceId);
+        CartLineItem line = requireLine(lineId, sessionId, deviceId);
         MenuItem item = cartValidationService.requireOrderableItem(line.getMenuItem().getId());
         List<ModifierOption> options = cartValidationService.validateSelections(item, request.selections());
 
@@ -74,33 +83,36 @@ public class GuestCartServiceImpl implements GuestCartService {
         applySelections(line, request.selections(), options);
 
         cartLineItemRepository.save(line);
-        return priceCart(session);
+        return priceCart(session, deviceId);
     }
 
     @Override
     @Transactional
-    public CartResponse removeLine(UUID sessionId, UUID lineId) {
+    public CartResponse removeLine(UUID sessionId, UUID deviceId, UUID lineId) {
         TableSession session = guestSessionService.requireActiveSession(sessionId);
-        cartLineItemRepository.delete(requireLine(lineId, sessionId));
-        return priceCart(session);
+        spentDeviceGuard.requireNotSpent(deviceId);
+        cartLineItemRepository.delete(requireLine(lineId, sessionId, deviceId));
+        return priceCart(session, deviceId);
     }
 
     @Override
     @Transactional
-    public CartResponse clear(UUID sessionId) {
+    public CartResponse clear(UUID sessionId, UUID deviceId) {
         TableSession session = guestSessionService.requireActiveSession(sessionId);
-        cartLineItemRepository.deleteBySessionId(sessionId);
-        return priceCart(session);
+        spentDeviceGuard.requireNotSpent(deviceId);
+        cartLineItemRepository.deleteBySessionIdAndDeviceId(sessionId, deviceId);
+        return priceCart(session, deviceId);
     }
 
-    private CartResponse priceCart(TableSession session) {
+    private CartResponse priceCart(TableSession session, UUID deviceId) {
         return cartPricingService.price(session,
-                cartLineItemRepository.findBySessionIdOrderByCreatedAtAsc(session.getId()));
+                cartLineItemRepository.findBySessionIdAndDeviceIdOrderByCreatedAtAsc(session.getId(), deviceId));
     }
 
-    private CartLineItem requireLine(UUID lineId, UUID sessionId) {
-        // Scoped to the token's session so one table can never touch another table's cart
-        return cartLineItemRepository.findByIdAndSessionId(lineId, sessionId)
+    private CartLineItem requireLine(UUID lineId, UUID sessionId, UUID deviceId) {
+        // Scoped to the token's session and device so no other table — or other
+        // phone at the same table — can touch this draft line
+        return cartLineItemRepository.findByIdAndSessionIdAndDeviceId(lineId, sessionId, deviceId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Cart line not found: " + lineId));
     }
 

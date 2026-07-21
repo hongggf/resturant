@@ -50,14 +50,16 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    // Short-lived token for QR-table guests; carries the session id instead of a username
-    public String generateGuestToken(UUID sessionId) {
+    // Short-lived token for QR-table guests; carries the session id instead of a
+    // username plus a per-scan device id (one ordering turn per device)
+    public String generateGuestToken(UUID sessionId, UUID deviceId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + guestExpirationMs);
         return Jwts.builder()
                 .subject("guest")
                 .claim(SecurityConstants.CLAIM_TOKEN_TYPE, SecurityConstants.TOKEN_TYPE_GUEST)
                 .claim(SecurityConstants.CLAIM_SESSION_ID, sessionId.toString())
+                .claim(SecurityConstants.CLAIM_DEVICE_ID, deviceId.toString())
                 .claim("roles", List.of(SecurityConstants.ROLE_GUEST))
                 .issuedAt(now)
                 .expiration(expiry)
@@ -77,6 +79,11 @@ public class JwtTokenProvider {
     public UUID getSessionId(String token) {
         String sessionId = parseClaims(token).get(SecurityConstants.CLAIM_SESSION_ID, String.class);
         return sessionId == null ? null : UUID.fromString(sessionId);
+    }
+
+    public UUID getDeviceId(String token) {
+        String deviceId = parseClaims(token).get(SecurityConstants.CLAIM_DEVICE_ID, String.class);
+        return deviceId == null ? null : UUID.fromString(deviceId);
     }
 
     public boolean validateToken(String token) {

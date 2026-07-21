@@ -14,8 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Guest round endpoints — the session id always comes from the guest token,
- * never from the URL, so one table cannot address another's orders.
+ * Guest round endpoints — session and device ids always come from the guest
+ * token, never from the URL, so one table cannot address another's orders.
+ * Send is one-shot per device (403 once spent → re-scan the table QR);
+ * viewing the table's orders stays open to spent devices.
  */
 @RestController
 @RequestMapping("/api/v1/guest")
@@ -29,7 +31,7 @@ public class GuestOrderController {
     public ResponseEntity<ApiResponse<GuestOrdersResponse>> send(
             @AuthenticationPrincipal GuestPrincipal guest) {
         return ResponseEntity.ok(ApiResponse.success("Order sent",
-                guestOrderService.send(guest.sessionId())));
+                guestOrderService.send(guest.sessionId(), guest.deviceId())));
     }
 
     @GetMapping("/orders")

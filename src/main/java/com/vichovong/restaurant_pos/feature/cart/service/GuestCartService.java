@@ -8,13 +8,13 @@ import java.util.UUID;
 
 public interface GuestCartService {
 
-    CartResponse getCart(UUID sessionId);
+    CartResponse getCart(UUID sessionId, UUID deviceId);
 
-    CartResponse addLine(UUID sessionId, CartLineAddRequest request);
+    CartResponse addLine(UUID sessionId, UUID deviceId, CartLineAddRequest request);
 
-    CartResponse updateLine(UUID sessionId, UUID lineId, CartLineUpdateRequest request);
+    CartResponse updateLine(UUID sessionId, UUID deviceId, UUID lineId, CartLineUpdateRequest request);
 
-    CartResponse removeLine(UUID sessionId, UUID lineId);
+    CartResponse removeLine(UUID sessionId, UUID deviceId, UUID lineId);
 
-    CartResponse clear(UUID sessionId);
+    CartResponse clear(UUID sessionId, UUID deviceId);
 }

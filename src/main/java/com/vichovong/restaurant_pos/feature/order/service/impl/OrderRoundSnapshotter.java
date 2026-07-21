@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Builds an immutable OrderRound from priced cart lines (spec §B core invariant):
@@ -26,12 +27,14 @@ public class OrderRoundSnapshotter {
     /**
      * The priced lines are built from {@code lines} in order, so index pairing
      * is safe. The caller persists the returned round (cascade covers children).
+     * {@code deviceId} is the sending guest device, or null for cashier rounds.
      */
-    public OrderRound snapshot(TableSession session, int roundNumber,
+    public OrderRound snapshot(TableSession session, int roundNumber, UUID deviceId,
                                List<CartLineItem> lines, CartResponse priced) {
         OrderRound round = new OrderRound();
         round.setSession(session);
         round.setRoundNumber(roundNumber);
+        round.setDeviceId(deviceId);
         round.setStatus(RoundStatus.SENT);
         round.setSubtotal(priced.subtotal());
         round.setVatRate(priced.vatRate());

@@ -144,8 +144,9 @@ public class CashierRoundServiceImpl implements CashierRoundService {
         }
 
         CartResponse priced = cartPricingService.price(session, lines);
+        // No guest device behind a staff-entered round
         OrderRound round = orderRoundSnapshotter.snapshot(session,
-                orderRoundRepository.findMaxRoundNumber(sessionId) + 1, lines, priced);
+                orderRoundRepository.findMaxRoundNumber(sessionId) + 1, null, lines, priced);
 
         orderRoundRepository.save(round);
         return orderRoundMapper.toCashierRoundResponse(round);

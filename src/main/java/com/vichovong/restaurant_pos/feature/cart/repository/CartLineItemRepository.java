@@ -9,9 +9,9 @@ import java.util.UUID;
 
 public interface CartLineItemRepository extends JpaRepository<CartLineItem, UUID> {
 
-    List<CartLineItem> findBySessionIdOrderByCreatedAtAsc(UUID sessionId);
+    List<CartLineItem> findBySessionIdAndDeviceIdOrderByCreatedAtAsc(UUID sessionId, UUID deviceId);
 
-    Optional<CartLineItem> findByIdAndSessionId(UUID id, UUID sessionId);
+    Optional<CartLineItem> findByIdAndSessionIdAndDeviceId(UUID id, UUID sessionId, UUID deviceId);
 
-    void deleteBySessionId(UUID sessionId);
+    void deleteBySessionIdAndDeviceId(UUID sessionId, UUID deviceId);
 }

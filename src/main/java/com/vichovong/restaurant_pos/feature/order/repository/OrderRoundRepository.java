@@ -21,4 +21,7 @@ public interface OrderRoundRepository extends JpaRepository<OrderRound, UUID> {
 
     @Query("select coalesce(max(r.roundNumber), 0) from OrderRound r where r.session.id = :sessionId")
     int findMaxRoundNumber(@Param("sessionId") UUID sessionId);
+
+    // Device ids are minted per scan, so a single hit means the device already sent
+    boolean existsByDeviceId(UUID deviceId);
 }

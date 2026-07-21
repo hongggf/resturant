@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Uploads ###
+/uploads/
+
+### Generated docs ###
+/docs/swagger-static/

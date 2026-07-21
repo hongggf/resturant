@@ -12,5 +12,6 @@ public final class SecurityConstants {
     public static final String ROLE_GUEST = "GUEST";
     public static final String CLAIM_TOKEN_TYPE = "typ";
     public static final String CLAIM_SESSION_ID = "sessionId";
+    public static final String CLAIM_DEVICE_ID = "deviceId";
     public static final String TOKEN_TYPE_GUEST = "guest";
 }

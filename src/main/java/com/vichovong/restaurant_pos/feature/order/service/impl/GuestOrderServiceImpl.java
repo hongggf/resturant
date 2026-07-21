@@ -46,10 +46,11 @@ public class GuestOrderServiceImpl implements GuestOrderService {
     private final ExchangeRateService exchangeRateService;
     private final OrderRoundSnapshotter orderRoundSnapshotter;
     private final OrderRoundMapper orderRoundMapper;
+    private final SpentDeviceGuard spentDeviceGuard;
 
     @Override
     @Transactional
-    public GuestOrdersResponse send(UUID sessionId) {
+    public GuestOrdersResponse send(UUID sessionId, UUID deviceId) {
         // Row lock serializes concurrent sends and close-out for this session (spec §B2);
         // status is re-checked under the lock so a just-closed session can't be sent to.
         TableSession session = tableSessionRepository.findByIdForUpdate(sessionId)
@@ -57,7 +58,11 @@ public class GuestOrderServiceImpl implements GuestOrderService {
                 .orElseThrow(() -> new ApiException(HttpStatus.GONE, "Table session is closed"));
         session.setLastActivityAt(Instant.now());
 
-        List<CartLineItem> lines = cartLineItemRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
+        // Checked under the lock so a double-tap can't send twice from one device
+        spentDeviceGuard.requireNotSpent(deviceId);
+
+        List<CartLineItem> lines =
+                cartLineItemRepository.findBySessionIdAndDeviceIdOrderByCreatedAtAsc(sessionId, deviceId);
         if (lines.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Cart is empty");
         }
@@ -71,10 +76,10 @@ public class GuestOrderServiceImpl implements GuestOrderService {
 
         CartResponse priced = cartPricingService.price(session, lines);
         OrderRound round = orderRoundSnapshotter.snapshot(session,
-                orderRoundRepository.findMaxRoundNumber(sessionId) + 1, lines, priced);
+                orderRoundRepository.findMaxRoundNumber(sessionId) + 1, deviceId, lines, priced);
 
         orderRoundRepository.save(round);
-        cartLineItemRepository.deleteBySessionId(sessionId);
+        cartLineItemRepository.deleteBySessionIdAndDeviceId(sessionId, deviceId);
 
         return buildOrdersResponse(session);
     }

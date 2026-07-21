@@ -17,6 +17,7 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Mutable draft line — lives only until the cart is sent as an order round,
@@ -32,6 +33,10 @@ public class CartLineItem extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "session_id", nullable = false)
     private TableSession session;
+
+    // Per-scan device that owns this draft line — drafts are private to a device
+    @Column(name = "device_id", nullable = false)
+    private UUID deviceId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "menu_item_id", nullable = false)
