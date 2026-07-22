@@ -30,6 +30,9 @@ services:
       UPLOAD_DIR: ${UPLOAD_DIR:-uploads}
       TAX_RATE: ${TAX_RATE:-0.10}
       RESTAURANT_NAME: ${RESTAURANT_NAME:-Malantang Restaurant}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@restaurant-pos.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in .env}
     ports:
       - "8080:8080"
 

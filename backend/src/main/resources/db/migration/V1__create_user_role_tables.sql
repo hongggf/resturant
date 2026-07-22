@@ -26,19 +26,5 @@ VALUES
     (gen_random_uuid(), 'ADMIN', now(), now()),
     (gen_random_uuid(), 'CASHIER', now(), now());
 
--- Default admin user, username: admin, password: Admin@123 (change in production)
-INSERT INTO users (id, username, email, password, enabled, created_at, updated_at)
-VALUES (
-    gen_random_uuid(),
-    'admin',
-    'admin@restaurant-pos.local',
-    '$2a$10$1j4gPswn3n/OMVyrPxyNROBz77noldjjwOEs/KQJGvXSD3iv7Pt1u',
-    TRUE,
-    now(),
-    now()
-);
-
-INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id
-FROM users u, roles r
-WHERE u.username = 'admin' AND r.name = 'ADMIN';
+-- The initial admin user is created at application startup by AdminSeeder,
+-- using ADMIN_USERNAME/ADMIN_EMAIL/ADMIN_PASSWORD, instead of a fixed hash here.
