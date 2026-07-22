@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: restaurant-pos-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-restaurant_pos}
+      POSTGRES_USER: ${POSTGRES_USER:-pos_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pos_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pos_user} -d ${POSTGRES_DB:-restaurant_pos}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: restaurant-pos-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-restaurant_pos}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pos_user}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pos_password}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      UPLOAD_DIR: ${UPLOAD_DIR:-uploads}
+      TAX_RATE: ${TAX_RATE:-0.10}
+      RESTAURANT_NAME: ${RESTAURANT_NAME:-Malantang Restaurant}
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    container_name: restaurant-pos-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  pgdata:
