@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router"
 
 import { AdminLayout } from "@/layouts/admin-layout"
 import { CashierLayout } from "@/layouts/cashier-layout"
+import { GuestLayout } from "@/layouts/guest-layout"
 import { CategoriesPage } from "@/pages/admin/categories"
 import { MenuItemsPage } from "@/pages/admin/menu-items"
 import { ModifierGroupsPage } from "@/pages/admin/modifier-groups"
@@ -13,13 +14,49 @@ import { ManualOrderPage } from "@/pages/cashier/manual-order"
 import { ReceiptPage } from "@/pages/cashier/receipt"
 import { SessionPage } from "@/pages/cashier/session"
 import { TableBoardPage } from "@/pages/cashier/table-board"
+import { GuestCartPage } from "@/pages/guest/cart"
+import { GuestMenuPage } from "@/pages/guest/menu"
+import { GuestOrdersPage } from "@/pages/guest/orders"
+import { GuestResolvePage } from "@/pages/guest/resolve"
 import { LoginPage } from "@/pages/login"
+import { GuestSessionGuard } from "./guest-session-guard"
 import { RequireAuth } from "./require-auth"
 import { RoleLanding } from "./role-landing"
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/", element: <RoleLanding /> },
+  {
+    path: "/guest",
+    element: <GuestLayout />,
+    children: [
+      { index: true, element: <GuestResolvePage /> },
+      {
+        path: "menu",
+        element: (
+          <GuestSessionGuard>
+            <GuestMenuPage />
+          </GuestSessionGuard>
+        ),
+      },
+      {
+        path: "cart",
+        element: (
+          <GuestSessionGuard>
+            <GuestCartPage />
+          </GuestSessionGuard>
+        ),
+      },
+      {
+        path: "orders",
+        element: (
+          <GuestSessionGuard>
+            <GuestOrdersPage />
+          </GuestSessionGuard>
+        ),
+      },
+    ],
+  },
   {
     element: <RequireAuth roles={["ADMIN"]} />,
     children: [
