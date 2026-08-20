@@ -22,3 +22,17 @@ export function voidRoundLine(roundId: string, lineId: string, reason: string) {
     body: JSON.stringify({ reason }),
   })
 }
+
+export function updateRoundLineSelections(
+  roundId: string,
+  lineId: string,
+  selections: { modifierOptionId: string; quantity: number }[]
+) {
+  return apiFetch<CashierRound>(
+    `/rounds/${roundId}/lines/${lineId}/selections`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ selections }),
+    }
+  )
+}

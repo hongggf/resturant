@@ -1,5 +1,8 @@
 package com.vichovong.restaurant_pos.feature.table.service.impl;
 
+import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
+import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.table.entity.SessionStatus;
 import com.vichovong.restaurant_pos.feature.table.entity.TableSession;
 import com.vichovong.restaurant_pos.feature.table.repository.TableSessionRepository;
@@ -13,10 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Safety net for abandoned tables: closes ACTIVE sessions with no guest activity
- * for the configured idle window. Normal close-out happens in the cashier module.
+ * for the configured idle window, and cancels any pending cook queue rounds.
  */
 @Slf4j
 @Component
@@ -24,6 +28,7 @@ import java.util.List;
 public class SessionCleanupJob {
 
     private final TableSessionRepository tableSessionRepository;
+    private final OrderRoundRepository orderRoundRepository;
 
     @Value("${app.session.idle-timeout:PT4H}")
     private Duration idleTimeout;
@@ -38,11 +43,26 @@ public class SessionCleanupJob {
             return;
         }
         Instant now = Instant.now();
+        List<UUID> staleSessionIds = stale.stream().map(TableSession::getId).toList();
+        List<OrderRound> pendingRounds = orderRoundRepository.findBySessionIdIn(staleSessionIds).stream()
+                .filter(r -> r.getStatus() == RoundStatus.SENT || r.getStatus() == RoundStatus.READY)
+                .toList();
+
+        for (OrderRound round : pendingRounds) {
+            round.setStatus(RoundStatus.CANCELLED);
+            round.setCancelledAt(now);
+            round.setCancelReason("Session timed out / abandoned");
+        }
+        if (!pendingRounds.isEmpty()) {
+            orderRoundRepository.saveAll(pendingRounds);
+        }
+
         for (TableSession session : stale) {
             session.setStatus(SessionStatus.CLOSED);
             session.setClosedAt(now);
         }
         tableSessionRepository.saveAll(stale);
-        log.info("Auto-closed {} stale table session(s) idle since before {}", stale.size(), cutoff);
+        log.info("Auto-closed {} stale table session(s) and cancelled {} pending round(s)",
+                stale.size(), pendingRounds.size());
     }
 }

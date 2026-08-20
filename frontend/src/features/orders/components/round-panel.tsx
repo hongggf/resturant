@@ -6,7 +6,32 @@ import { Separator } from "@/components/ui/separator"
 import { Spinner } from "@/components/ui/spinner"
 import { formatPrice } from "@/lib/format"
 import { draftTotal, lineTotal } from "../lib/draft"
-import type { DraftLine } from "../types"
+import type { DraftLine, DraftSelection } from "../types"
+
+/** Selections in a line, bucketed by modifier group, in group display order. */
+function groupSelections(selections: DraftSelection[]) {
+  const groups: {
+    key: string
+    nameEn?: string
+    order: number
+    items: DraftSelection[]
+  }[] = []
+  for (const selection of selections) {
+    const key = selection.group.id ?? selection.group.nameEn ?? ""
+    let bucket = groups.find((g) => g.key === key)
+    if (!bucket) {
+      bucket = {
+        key,
+        nameEn: selection.group.nameEn,
+        order: selection.group.order,
+        items: [],
+      }
+      groups.push(bucket)
+    }
+    bucket.items.push(selection)
+  }
+  return groups.sort((a, b) => a.order - b.order)
+}
 
 interface RoundPanelProps {
   lines: DraftLine[]
@@ -37,26 +62,60 @@ export function RoundPanel({
         ) : (
           <ul className="space-y-3">
             {lines.map((line) => (
-              <li key={line.key} className="flex items-start gap-2">
-                <div className="min-w-0 flex-1">
+              <li
+                key={line.key}
+                className="grid grid-cols-[1fr_auto] items-start gap-x-2 gap-y-1"
+              >
+                <div className="min-w-0">
                   <p className="text-sm font-medium">{line.item.nameEn}</p>
-                  {line.selections.length > 0 && (
-                    <p className="text-muted-foreground text-xs">
-                      {line.selections
-                        .map((s) =>
-                          s.quantity > 1
-                            ? `${s.quantity}× ${s.option.nameEn}`
-                            : s.option.nameEn
-                        )
-                        .join(" · ")}
-                    </p>
-                  )}
-                  {line.remark && (
-                    <p className="text-muted-foreground text-xs italic">
-                      “{line.remark}”
-                    </p>
-                  )}
-                  <div className="mt-1 flex items-center gap-1">
+                </div>
+                <span className="text-sm tabular-nums">
+                  {formatPrice(lineTotal(line), line.item.currencyCode)}
+                </span>
+                {line.selections.length > 0 && (
+                  <div className="col-span-2 space-y-1">
+                    {groupSelections(line.selections).map((group) => (
+                      <div key={group.key}>
+                        {group.nameEn && (
+                          <p className="text-muted-foreground text-[11px] font-medium">
+                            {group.nameEn}
+                          </p>
+                        )}
+                        <ul className="text-muted-foreground text-xs">
+                          {group.items.map((s) => {
+                            const price =
+                              (s.option.unitPrice ?? 0) * s.quantity
+                            return (
+                              <li
+                                key={s.option.id ?? s.option.nameEn}
+                                className="flex items-center justify-between gap-2"
+                              >
+                                <span>
+                                  •{" "}
+                                  {s.quantity > 1
+                                    ? `${s.option.nameEn} ×${s.quantity}`
+                                    : s.option.nameEn}
+                                </span>
+                                {price > 0 && (
+                                  <span className="tabular-nums">
+                                    {formatPrice(price)}
+                                  </span>
+                                )}
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {line.remark && (
+                  <p className="text-muted-foreground col-span-2 text-xs italic">
+                    “{line.remark}”
+                  </p>
+                )}
+                <div className="col-span-2 mt-1 flex items-center justify-between">
+                  <div className="flex items-center gap-1">
                     <Button
                       size="icon-xs"
                       variant="outline"
@@ -79,11 +138,6 @@ export function RoundPanel({
                       <span className="sr-only">Increase quantity</span>
                     </Button>
                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className="text-sm tabular-nums">
-                    {formatPrice(lineTotal(line), line.item.currencyCode)}
-                  </span>
                   <Button
                     size="icon-xs"
                     variant="ghost"

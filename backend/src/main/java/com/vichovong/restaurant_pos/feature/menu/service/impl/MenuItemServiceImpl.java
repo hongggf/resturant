@@ -2,6 +2,7 @@ package com.vichovong.restaurant_pos.feature.menu.service.impl;
 
 import com.vichovong.restaurant_pos.common.dto.PageResponse;
 import com.vichovong.restaurant_pos.common.exception.ApiException;
+import com.vichovong.restaurant_pos.feature.cart.repository.CartLineItemRepository;
 import com.vichovong.restaurant_pos.feature.currency.entity.Currency;
 import com.vichovong.restaurant_pos.feature.currency.repository.CurrencyRepository;
 import com.vichovong.restaurant_pos.feature.menu.dto.MenuItemCreateRequest;
@@ -13,6 +14,7 @@ import com.vichovong.restaurant_pos.feature.menu.mapper.MenuItemMapper;
 import com.vichovong.restaurant_pos.feature.menu.repository.CategoryRepository;
 import com.vichovong.restaurant_pos.feature.menu.repository.MenuItemRepository;
 import com.vichovong.restaurant_pos.feature.menu.service.MenuItemService;
+import com.vichovong.restaurant_pos.feature.modifier.repository.MenuItemModifierGroupRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +39,8 @@ public class MenuItemServiceImpl implements MenuItemService {
     private final MenuItemRepository menuItemRepository;
     private final CategoryRepository categoryRepository;
     private final CurrencyRepository currencyRepository;
+    private final MenuItemModifierGroupRepository menuItemModifierGroupRepository;
+    private final CartLineItemRepository cartLineItemRepository;
     private final MenuItemMapper menuItemMapper;
 
     @Value("${app.upload.dir:uploads}")
@@ -80,6 +84,11 @@ public class MenuItemServiceImpl implements MenuItemService {
     @Override
     @Transactional
     public void delete(UUID id) {
+        if (menuItemModifierGroupRepository.existsByMenuItemId(id)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Cannot delete menu item attached to modifier groups — detach groups first or mark item unavailable");
+        }
+        cartLineItemRepository.deleteByMenuItemId(id);
         menuItemRepository.delete(findMenuItem(id));
     }
 

@@ -1,6 +1,7 @@
 package com.vichovong.restaurant_pos.config;
 
 import com.vichovong.restaurant_pos.security.JwtAuthFilter;
+import com.vichovong.restaurant_pos.security.RateLimitingFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +28,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final RateLimitingFilter rateLimitingFilter;
 
     @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
@@ -47,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/guest/**").hasRole("GUEST")
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

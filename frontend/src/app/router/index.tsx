@@ -1,41 +1,60 @@
+import { lazy, Suspense } from "react"
 import { createBrowserRouter, Navigate } from "react-router"
 
+import { Spinner } from "@/components/ui/spinner"
 import { AdminLayout } from "@/layouts/admin-layout"
 import { CashierLayout } from "@/layouts/cashier-layout"
 import { GuestLayout } from "@/layouts/guest-layout"
-import { CategoriesPage } from "@/pages/admin/categories"
-import { MenuItemsPage } from "@/pages/admin/menu-items"
-import { ModifierGroupsPage } from "@/pages/admin/modifier-groups"
-import { OverviewPage } from "@/pages/admin/overview"
-import { TablesPage } from "@/pages/admin/tables"
-import { UsersPage } from "@/pages/admin/users"
-import { BillPage } from "@/pages/cashier/bill"
-import { ManualOrderPage } from "@/pages/cashier/manual-order"
-import { ReceiptPage } from "@/pages/cashier/receipt"
-import { SessionPage } from "@/pages/cashier/session"
-import { TableBoardPage } from "@/pages/cashier/table-board"
-import { GuestCartPage } from "@/pages/guest/cart"
-import { GuestMenuPage } from "@/pages/guest/menu"
-import { GuestOrdersPage } from "@/pages/guest/orders"
-import { GuestResolvePage } from "@/pages/guest/resolve"
-import { LoginPage } from "@/pages/login"
 import { GuestSessionGuard } from "./guest-session-guard"
 import { RequireAuth } from "./require-auth"
 import { RoleLanding } from "./role-landing"
 
+const CategoriesPage = lazy(() => import("@/pages/admin/categories").then(m => ({ default: m.CategoriesPage })))
+const MenuItemsPage = lazy(() => import("@/pages/admin/menu-items").then(m => ({ default: m.MenuItemsPage })))
+const ModifierGroupsPage = lazy(() => import("@/pages/admin/modifier-groups").then(m => ({ default: m.ModifierGroupsPage })))
+const OverviewPage = lazy(() => import("@/pages/admin/overview").then(m => ({ default: m.OverviewPage })))
+const TablesPage = lazy(() => import("@/pages/admin/tables").then(m => ({ default: m.TablesPage })))
+const UsersPage = lazy(() => import("@/pages/admin/users").then(m => ({ default: m.UsersPage })))
+
+const BillPage = lazy(() => import("@/pages/cashier/bill").then(m => ({ default: m.BillPage })))
+const ManualOrderPage = lazy(() => import("@/pages/cashier/manual-order").then(m => ({ default: m.ManualOrderPage })))
+const ReceiptPage = lazy(() => import("@/pages/cashier/receipt").then(m => ({ default: m.ReceiptPage })))
+const SessionPage = lazy(() => import("@/pages/cashier/session").then(m => ({ default: m.SessionPage })))
+const TableBoardPage = lazy(() => import("@/pages/cashier/table-board").then(m => ({ default: m.TableBoardPage })))
+
+const GuestCartPage = lazy(() => import("@/pages/guest/cart").then(m => ({ default: m.GuestCartPage })))
+const GuestMenuPage = lazy(() => import("@/pages/guest/menu").then(m => ({ default: m.GuestMenuPage })))
+const GuestOrdersPage = lazy(() => import("@/pages/guest/orders").then(m => ({ default: m.GuestOrdersPage })))
+const GuestResolvePage = lazy(() => import("@/pages/guest/resolve").then(m => ({ default: m.GuestResolvePage })))
+const LoginPage = lazy(() => import("@/pages/login").then(m => ({ default: m.LoginPage })))
+
+function withSuspense(Component: React.ComponentType) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-1 items-center justify-center p-8">
+          <Spinner className="size-6 text-muted-foreground" />
+        </div>
+      }
+    >
+      <Component />
+    </Suspense>
+  )
+}
+
 export const router = createBrowserRouter([
-  { path: "/login", element: <LoginPage /> },
+  { path: "/login", element: withSuspense(LoginPage) },
   { path: "/", element: <RoleLanding /> },
   {
     path: "/guest",
     element: <GuestLayout />,
     children: [
-      { index: true, element: <GuestResolvePage /> },
+      { index: true, element: withSuspense(GuestResolvePage) },
       {
         path: "menu",
         element: (
           <GuestSessionGuard>
-            <GuestMenuPage />
+            {withSuspense(GuestMenuPage)}
           </GuestSessionGuard>
         ),
       },
@@ -43,7 +62,7 @@ export const router = createBrowserRouter([
         path: "cart",
         element: (
           <GuestSessionGuard>
-            <GuestCartPage />
+            {withSuspense(GuestCartPage)}
           </GuestSessionGuard>
         ),
       },
@@ -51,7 +70,7 @@ export const router = createBrowserRouter([
         path: "orders",
         element: (
           <GuestSessionGuard>
-            <GuestOrdersPage />
+            {withSuspense(GuestOrdersPage)}
           </GuestSessionGuard>
         ),
       },
@@ -64,12 +83,12 @@ export const router = createBrowserRouter([
         path: "/admin",
         element: <AdminLayout />,
         children: [
-          { index: true, element: <OverviewPage /> },
-          { path: "categories", element: <CategoriesPage /> },
-          { path: "menu-items", element: <MenuItemsPage /> },
-          { path: "modifier-groups", element: <ModifierGroupsPage /> },
-          { path: "tables", element: <TablesPage /> },
-          { path: "users", element: <UsersPage /> },
+          { index: true, element: withSuspense(OverviewPage) },
+          { path: "categories", element: withSuspense(CategoriesPage) },
+          { path: "menu-items", element: withSuspense(MenuItemsPage) },
+          { path: "modifier-groups", element: withSuspense(ModifierGroupsPage) },
+          { path: "tables", element: withSuspense(TablesPage) },
+          { path: "users", element: withSuspense(UsersPage) },
         ],
       },
     ],
@@ -82,11 +101,11 @@ export const router = createBrowserRouter([
         path: "/cashier",
         element: <CashierLayout />,
         children: [
-          { index: true, element: <TableBoardPage /> },
-          { path: "sessions/:sessionId", element: <SessionPage /> },
-          { path: "sessions/:sessionId/order", element: <ManualOrderPage /> },
-          { path: "sessions/:sessionId/bill", element: <BillPage /> },
-          { path: "sessions/:sessionId/receipt", element: <ReceiptPage /> },
+          { index: true, element: withSuspense(TableBoardPage) },
+          { path: "sessions/:sessionId", element: withSuspense(SessionPage) },
+          { path: "sessions/:sessionId/order", element: withSuspense(ManualOrderPage) },
+          { path: "sessions/:sessionId/bill", element: withSuspense(BillPage) },
+          { path: "sessions/:sessionId/receipt", element: withSuspense(ReceiptPage) },
         ],
       },
     ],

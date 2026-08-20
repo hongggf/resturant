@@ -65,6 +65,14 @@ public class CartValidationServiceImpl implements CartValidationService {
                 throw new ApiException(HttpStatus.BAD_REQUEST,
                         "Duplicate modifier option: " + selection.modifierOptionId());
             }
+            if (selection.quantity() == null || selection.quantity() < 1) {
+                throw new ApiException(HttpStatus.BAD_REQUEST,
+                        "Quantity must be at least 1 for modifier selection");
+            }
+            if (selection.quantity() > 20) {
+                throw new ApiException(HttpStatus.BAD_REQUEST,
+                        "Maximum quantity per modifier option is 20");
+            }
             ModifierOption option = modifierOptionRepository.findById(selection.modifierOptionId())
                     .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST,
                             "Unknown modifier option: " + selection.modifierOptionId()));
@@ -76,6 +84,10 @@ public class CartValidationServiceImpl implements CartValidationService {
             if (!option.isAvailable()) {
                 throw new ApiException(HttpStatus.BAD_REQUEST,
                         "Modifier option is not available: " + option.getNameEn());
+            }
+            if (group.getMaxChoice() != null && group.getMaxChoice() == 1 && selection.quantity() > 1) {
+                throw new ApiException(HttpStatus.BAD_REQUEST,
+                        "\"" + group.getNameEn() + "\" is single-choice and only allows quantity 1");
             }
             choicesPerGroup.merge(group.getId(), 1, Integer::sum);
             resolved.add(option);

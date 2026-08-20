@@ -9,6 +9,7 @@ export type CartLineAddRequest = components["schemas"]["CartLineAddRequest"]
 export interface DraftSelection {
   option: ModifierOption
   quantity: number
+  group: { id?: string; nameEn?: string; order: number }
 }
 
 /** One line of the round being composed locally, before it's sent. */

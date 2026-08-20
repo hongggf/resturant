@@ -2,6 +2,7 @@ const TOKEN_KEY = "guest.accessToken"
 const EXPIRES_AT_KEY = "guest.tokenExpiresAt"
 const SESSION_ID_KEY = "guest.sessionId"
 const TABLE_NUMBER_KEY = "guest.tableNumber"
+const SPENT_KEY = "guest.isSpent"
 
 interface GuestSession {
   accessToken: string
@@ -15,6 +16,19 @@ export function saveGuestSession(session: GuestSession) {
   localStorage.setItem(EXPIRES_AT_KEY, String(Date.now() + session.expiresInMs))
   localStorage.setItem(SESSION_ID_KEY, session.sessionId)
   localStorage.setItem(TABLE_NUMBER_KEY, session.tableNumber)
+  localStorage.removeItem(SPENT_KEY)
+}
+
+export function setGuestSpent(spent: boolean) {
+  if (spent) {
+    localStorage.setItem(SPENT_KEY, "true")
+  } else {
+    localStorage.removeItem(SPENT_KEY)
+  }
+}
+
+export function isGuestSpent(): boolean {
+  return localStorage.getItem(SPENT_KEY) === "true"
 }
 
 export function getGuestToken(): string | null {
@@ -39,4 +53,5 @@ export function clearGuestSession() {
   localStorage.removeItem(EXPIRES_AT_KEY)
   localStorage.removeItem(SESSION_ID_KEY)
   localStorage.removeItem(TABLE_NUMBER_KEY)
+  localStorage.removeItem(SPENT_KEY)
 }

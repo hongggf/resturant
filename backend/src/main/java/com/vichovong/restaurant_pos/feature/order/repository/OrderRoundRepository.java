@@ -24,4 +24,7 @@ public interface OrderRoundRepository extends JpaRepository<OrderRound, UUID> {
 
     // Device ids are minted per scan, so a single hit means the device already sent
     boolean existsByDeviceId(UUID deviceId);
+
+    @Query("select count(l) > 0 from OrderRoundLineItem l where l.voidedBy.id = :userId")
+    boolean existsByVoidedById(@Param("userId") UUID userId);
 }

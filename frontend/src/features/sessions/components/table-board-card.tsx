@@ -35,37 +35,33 @@ export function TableBoardCard({ table, busy, onClick }: TableBoardCardProps) {
       disabled={busy}
       onClick={() => onClick(table)}
       className={cn(
-        "flex flex-col items-stretch gap-3 rounded-xl border-2 p-4 text-left transition-colors disabled:opacity-60",
+        "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 p-2 text-center transition-colors disabled:opacity-60",
         styles.card
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-lg font-semibold tracking-tight">
-          {table.tableNumber}
-        </span>
-        <span
-          className={cn(
-            "rounded-md px-2 py-0.5 text-xs font-medium",
-            styles.badge
-          )}
-        >
-          {state}
-        </span>
-      </div>
-      <div className="flex items-end justify-between gap-2">
-        <span className="text-xl font-semibold tabular-nums">
-          {state === "IDLE" ? "—" : formatPrice(table.runningTotal ?? 0)}
-        </span>
-        {busy ? (
-          <Spinner className="size-4" />
-        ) : state === "IDLE" ? (
-          <span className="text-muted-foreground text-xs">Tap to open</span>
-        ) : (
-          <span className="text-muted-foreground text-xs">
-            {rounds === 1 ? "1 open round" : `${rounds} open rounds`}
-          </span>
+      <span className="text-2xl font-semibold tracking-tight">
+        {table.tableNumber}
+      </span>
+      <span
+        className={cn(
+          "rounded-md px-1.5 py-0.5 text-[10px] font-medium",
+          styles.badge
         )}
-      </div>
+      >
+        {state}
+      </span>
+      <span className="text-sm font-semibold tabular-nums">
+        {state === "IDLE" ? "—" : formatPrice(table.runningTotal ?? 0)}
+      </span>
+      {busy ? (
+        <Spinner className="size-4" />
+      ) : state === "IDLE" ? (
+        <span className="text-muted-foreground text-[10px]">Tap to open</span>
+      ) : (
+        <span className="text-muted-foreground text-[10px]">
+          {rounds === 1 ? "1 round" : `${rounds} rounds`}
+        </span>
+      )}
     </button>
   )
 }

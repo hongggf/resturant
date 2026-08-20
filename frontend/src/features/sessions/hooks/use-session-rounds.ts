@@ -6,6 +6,7 @@ import {
   cancelRound,
   getSessionRounds,
   markRoundReady,
+  updateRoundLineSelections,
   voidRoundLine,
 } from "../api/rounds"
 
@@ -61,6 +62,23 @@ export function useVoidLine(sessionId: string) {
     onSuccess: () => {
       invalidate()
       toast.success("Item voided")
+    },
+    onError: (error: ApiError) => toast.error(error.message),
+  })
+}
+
+export function useUpdateLineSelections(sessionId: string) {
+  const invalidate = useInvalidateRounds(sessionId)
+  return useMutation({
+    mutationFn: (vars: {
+      roundId: string
+      lineId: string
+      selections: { modifierOptionId: string; quantity: number }[]
+    }) =>
+      updateRoundLineSelections(vars.roundId, vars.lineId, vars.selections),
+    onSuccess: () => {
+      invalidate()
+      toast.success("Item updated")
     },
     onError: (error: ApiError) => toast.error(error.message),
   })

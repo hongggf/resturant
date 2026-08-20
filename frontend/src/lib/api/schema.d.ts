@@ -84,6 +84,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rounds/{id}/lines/{lineId}/selections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateLineSelections"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rounds/{id}/cancel": {
         parameters: {
             query?: never;
@@ -778,6 +794,15 @@ export interface components {
         ReasonRequest: {
             reason: string;
         };
+        CartSelectionRequest: {
+            /** Format: uuid */
+            modifierOptionId: string;
+            /** Format: int32 */
+            quantity: number;
+        };
+        UpdateLineSelectionsRequest: {
+            selections: components["schemas"]["CartSelectionRequest"][];
+        };
         ModifierGroupUpdateRequest: {
             nameEn: string;
             nameKm: string;
@@ -877,12 +902,6 @@ export interface components {
             quantity: number;
             remark?: string;
             selections?: components["schemas"]["CartSelectionRequest"][];
-        };
-        CartSelectionRequest: {
-            /** Format: uuid */
-            modifierOptionId: string;
-            /** Format: int32 */
-            quantity: number;
         };
         ApiResponseCartResponse: {
             success?: boolean;
@@ -1573,6 +1592,33 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCashierRoundResponse"];
+                };
+            };
+        };
+    };
+    updateLineSelections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLineSelectionsRequest"];
             };
         };
         responses: {

@@ -1,5 +1,10 @@
 import type { ApiError } from "@/lib/api/client"
-import { clearGuestSession, getGuestSessionMeta } from "@/lib/auth/guest-token"
+import {
+  clearGuestSession,
+  getGuestSessionMeta,
+  isGuestSpent,
+  setGuestSpent,
+} from "@/lib/auth/guest-token"
 
 export type GuestSessionState =
   | { status: "no-session" }
@@ -10,7 +15,11 @@ export type GuestSessionState =
 
 function initialState(): GuestSessionState {
   const meta = getGuestSessionMeta()
-  return meta ? { status: "browsing", ...meta } : { status: "no-session" }
+  if (!meta) return { status: "no-session" }
+  if (isGuestSpent()) {
+    return { status: "spent", ...meta }
+  }
+  return { status: "browsing", ...meta }
 }
 
 let state: GuestSessionState = initialState()
@@ -37,10 +46,12 @@ export const guestSessionStore = {
     set({ status: "no-session" })
   },
   setBrowsing(meta: { sessionId: string; tableNumber: string }) {
+    setGuestSpent(false)
     set({ status: "browsing", ...meta })
   },
   markSpent() {
     if (state.status === "browsing" || state.status === "spent") {
+      setGuestSpent(true)
       set({ status: "spent", sessionId: state.sessionId, tableNumber: state.tableNumber })
     }
   },

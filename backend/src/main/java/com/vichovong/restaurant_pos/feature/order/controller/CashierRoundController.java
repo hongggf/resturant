@@ -4,6 +4,7 @@ import com.vichovong.restaurant_pos.common.dto.ApiResponse;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundRequest;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundResponse;
 import com.vichovong.restaurant_pos.feature.order.dto.ReasonRequest;
+import com.vichovong.restaurant_pos.feature.order.dto.UpdateLineSelectionsRequest;
 import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
 import com.vichovong.restaurant_pos.feature.order.service.CashierRoundService;
 import jakarta.validation.Valid;
@@ -62,6 +63,14 @@ public class CashierRoundController {
             @Valid @RequestBody ReasonRequest request, Authentication authentication) {
         return ResponseEntity.ok(ApiResponse.success("Line voided",
                 cashierRoundService.voidLine(id, lineId, request.reason(), authentication.getName())));
+    }
+
+    @PutMapping("/rounds/{id}/lines/{lineId}/selections")
+    public ResponseEntity<ApiResponse<CashierRoundResponse>> updateLineSelections(
+            @PathVariable UUID id, @PathVariable UUID lineId,
+            @Valid @RequestBody UpdateLineSelectionsRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Line updated",
+                cashierRoundService.updateLineSelections(id, lineId, request.selections())));
     }
 
     @PostMapping("/sessions/{sessionId}/rounds")

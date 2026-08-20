@@ -1,5 +1,6 @@
 package com.vichovong.restaurant_pos.feature.order.service;
 
+import com.vichovong.restaurant_pos.feature.cart.dto.CartSelectionRequest;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundRequest;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundResponse;
 import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
@@ -8,8 +9,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Staff round management (cashier spec §3–§5). Rounds are immutable snapshots —
- * "edit" never mutates a line: it voids, cancels, or adds a new round.
+ * Staff round management (cashier spec §3–§5). Rounds are immutable snapshots:
+ * names and base prices from send-time never change. The one deliberate
+ * exception is {@link #updateLineSelections}, a cashier-initiated correction
+ * that re-snapshots the edited modifiers' current name/price — everything
+ * else (void, cancel, a new round) leaves existing lines untouched.
  */
 public interface CashierRoundService {
 
@@ -35,4 +39,11 @@ public interface CashierRoundService {
      * guest cart-send, but submitted directly as a round in one call.
      */
     CashierRoundResponse submitRound(UUID sessionId, CashierRoundRequest request);
+
+    /**
+     * Replaces a SENT/READY line's modifier selections with a newly validated
+     * and re-priced set, then recomputes the round's totals. The line's own
+     * name/base price snapshot is untouched.
+     */
+    CashierRoundResponse updateLineSelections(UUID roundId, UUID lineId, List<CartSelectionRequest> selections);
 }

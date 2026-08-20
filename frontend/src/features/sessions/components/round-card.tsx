@@ -1,7 +1,14 @@
-import { Ban, CheckCheck } from "lucide-react"
+import { useMemo } from "react"
+import { Ban, CheckCheck, Pencil } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { Spinner } from "@/components/ui/spinner"
 import {
@@ -9,9 +16,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useItemModifierGroups } from "@/features/orders/hooks/use-manual-order"
+import type { AttachedModifierGroup } from "@/features/modifiers/types"
 import { formatPrice } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { CashierRound, RoundLine, RoundStatus } from "../types"
+
+type RoundSelection = NonNullable<RoundLine["selections"]>[number]
 
 const statusBadges: Record<RoundStatus, string> = {
   SENT: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
@@ -25,12 +36,141 @@ const timeFormat = new Intl.DateTimeFormat(undefined, {
   minute: "2-digit",
 })
 
+/** Maps a modifier option id to the group it belongs to today. */
+function buildGroupLookup(groups: AttachedModifierGroup[]) {
+  const lookup = new Map<string, { nameEn?: string; order: number }>()
+  groups.forEach((attached, index) => {
+    const order = attached.sortOrder ?? index
+    for (const option of attached.group?.options ?? []) {
+      if (option.id) lookup.set(option.id, { nameEn: attached.group?.nameEn, order })
+    }
+  })
+  return lookup
+}
+
+/** Selections bucketed by modifier group, in group display order. Selections
+ *  whose option no longer belongs to any attached group (deleted/reconfigured
+ *  since send-time) fall into a single trailing, unlabeled bucket. */
+function groupSelections(
+  selections: RoundSelection[],
+  lookup: Map<string, { nameEn?: string; order: number }>
+) {
+  const groups: {
+    key: string
+    nameEn?: string
+    order: number
+    items: RoundSelection[]
+  }[] = []
+  selections.forEach((selection, index) => {
+    const info = selection.modifierOptionId
+      ? lookup.get(selection.modifierOptionId)
+      : undefined
+    const key = info?.nameEn ?? "__ungrouped__"
+    let bucket = groups.find((g) => g.key === key)
+    if (!bucket) {
+      bucket = {
+        key,
+        nameEn: info?.nameEn,
+        order: info?.order ?? Number.MAX_SAFE_INTEGER + index,
+        items: [],
+      }
+      groups.push(bucket)
+    }
+    bucket.items.push(selection)
+  })
+  return groups.sort((a, b) => a.order - b.order)
+}
+
+interface RoundLineItemProps {
+  line: RoundLine
+}
+
+function RoundLineItem({ line }: RoundLineItemProps) {
+  const { data: attachedGroups } = useItemModifierGroups(
+    line.menuItemId ?? undefined
+  )
+  const lookup = useMemo(
+    () => buildGroupLookup(attachedGroups ?? []),
+    [attachedGroups]
+  )
+  const groups = line.selections?.length
+    ? groupSelections(line.selections, lookup)
+    : []
+
+  return (
+    <li className="grid grid-cols-[1fr_auto] items-start gap-x-2 gap-y-1">
+      <p
+        className={cn(
+          "text-sm font-medium",
+          line.voided && "text-muted-foreground line-through"
+        )}
+      >
+        {line.quantity}× {line.nameEn}
+      </p>
+      <span
+        className={cn(
+          "text-sm tabular-nums",
+          line.voided && "text-muted-foreground line-through"
+        )}
+      >
+        {formatPrice(line.lineTotal)}
+      </span>
+      {groups.length > 0 && (
+        <div className="col-span-2 space-y-1">
+          {groups.map((group) => (
+            <div key={group.key}>
+              {group.nameEn && (
+                <p className="text-muted-foreground text-[11px] font-medium">
+                  {group.nameEn}
+                </p>
+              )}
+              <ul className="text-muted-foreground text-xs">
+                {group.items.map((s) => {
+                  const price = (s.unitPrice ?? 0) * (s.quantity ?? 1)
+                  return (
+                    <li
+                      key={s.modifierOptionId ?? s.nameEn}
+                      className="flex items-center justify-between gap-2"
+                    >
+                      <span>
+                        •{" "}
+                        {(s.quantity ?? 1) > 1
+                          ? `${s.nameEn} ×${s.quantity}`
+                          : s.nameEn}
+                      </span>
+                      {price > 0 && (
+                        <span className="tabular-nums">
+                          {formatPrice(price)}
+                        </span>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+      {line.remark && (
+        <p className="text-muted-foreground col-span-2 text-xs italic">
+          “{line.remark}”
+        </p>
+      )}
+      {line.voided && line.voidReason && (
+        <p className="text-destructive col-span-2 text-xs no-underline">
+          Voided: {line.voidReason}
+        </p>
+      )}
+    </li>
+  )
+}
+
 interface RoundCardProps {
   round: CashierRound
   markingReady: boolean
   onMarkReady: (round: CashierRound) => void
   onCancel: (round: CashierRound) => void
-  onVoidLine: (round: CashierRound, line: RoundLine) => void
+  onEditLine: (round: CashierRound, line: RoundLine) => void
 }
 
 export function RoundCard({
@@ -38,11 +178,14 @@ export function RoundCard({
   markingReady,
   onMarkReady,
   onCancel,
-  onVoidLine,
+  onEditLine,
 }: RoundCardProps) {
   const status: RoundStatus = round.status ?? "SENT"
   const open = status === "SENT" || status === "READY"
   const cancelled = status === "CANCELLED"
+  const editableLines = (round.lines ?? []).filter(
+    (l) => !l.voided && l.menuItemId
+  )
 
   return (
     <Card className={cn("gap-3 py-4", cancelled && "opacity-70")}>
@@ -61,96 +204,11 @@ export function RoundCard({
         >
           {status}
         </span>
-        <div className="ml-auto flex items-center gap-1">
-          {status === "SENT" && (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={markingReady}
-              onClick={() => onMarkReady(round)}
-            >
-              {markingReady ? <Spinner /> : <CheckCheck />}
-              Mark ready
-            </Button>
-          )}
-          {open && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => onCancel(round)}
-                >
-                  <Ban />
-                  <span className="sr-only">Cancel round</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Cancel round</TooltipContent>
-            </Tooltip>
-          )}
-        </div>
       </CardHeader>
       <CardContent className="px-4">
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {round.lines?.map((line) => (
-            <li key={line.id} className="flex items-start gap-2">
-              <div
-                className={cn(
-                  "min-w-0 flex-1",
-                  line.voided && "text-muted-foreground line-through"
-                )}
-              >
-                <p className="text-sm font-medium">
-                  {line.quantity}× {line.nameEn}
-                </p>
-                {line.selections && line.selections.length > 0 && (
-                  <p className="text-muted-foreground text-xs">
-                    {line.selections
-                      .map((s) =>
-                        (s.quantity ?? 1) > 1
-                          ? `${s.quantity}× ${s.nameEn}`
-                          : s.nameEn
-                      )
-                      .join(" · ")}
-                  </p>
-                )}
-                {line.remark && (
-                  <p className="text-muted-foreground text-xs italic">
-                    “{line.remark}”
-                  </p>
-                )}
-                {line.voided && line.voidReason && (
-                  <p className="text-destructive text-xs no-underline">
-                    Voided: {line.voidReason}
-                  </p>
-                )}
-              </div>
-              <span
-                className={cn(
-                  "text-sm tabular-nums",
-                  line.voided && "text-muted-foreground line-through"
-                )}
-              >
-                {formatPrice(line.lineTotal)}
-              </span>
-              {open && !line.voided && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      className="text-muted-foreground -my-1"
-                      onClick={() => onVoidLine(round, line)}
-                    >
-                      <Ban />
-                      <span className="sr-only">Void item</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Void item</TooltipContent>
-                </Tooltip>
-              )}
-            </li>
+            <RoundLineItem key={line.id} line={line} />
           ))}
         </ul>
         {cancelled && round.cancelReason && (
@@ -159,18 +217,83 @@ export function RoundCard({
           </p>
         )}
       </CardContent>
-      {!cancelled && (
-        <>
-          <Separator />
-          <CardFooter className="text-muted-foreground justify-end gap-4 px-4 text-xs tabular-nums">
-            <span>Subtotal {formatPrice(round.subtotal)}</span>
-            <span>VAT {formatPrice(round.vatAmount)}</span>
-            <span className="text-foreground text-sm font-medium">
-              {formatPrice(round.grandTotal)}
-            </span>
-          </CardFooter>
-        </>
-      )}
+      <Separator />
+      <CardFooter className="flex-col gap-3 px-4">
+        <div className="text-muted-foreground flex w-full justify-end gap-4 text-xs tabular-nums">
+          <span>Subtotal {formatPrice(round.subtotal)}</span>
+          <span>VAT {formatPrice(round.vatAmount)}</span>
+          <span className="text-foreground text-sm font-medium">
+            {formatPrice(round.grandTotal)}
+          </span>
+        </div>
+        {!cancelled && (
+          <div className="flex w-full justify-end gap-2">
+            {open &&
+              (editableLines.length === 0 ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button size="sm" variant="outline" disabled>
+                        <Pencil />
+                        Edit
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>No editable items in this round</TooltipContent>
+                </Tooltip>
+              ) : editableLines.length === 1 ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onEditLine(round, editableLines[0])}
+                >
+                  <Pencil />
+                  Edit
+                </Button>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <Pencil />
+                      Edit
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {editableLines.map((line) => (
+                      <DropdownMenuItem
+                        key={line.id}
+                        onClick={() => onEditLine(round, line)}
+                      >
+                        {line.quantity}× {line.nameEn}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ))}
+            {open && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+                onClick={() => onCancel(round)}
+              >
+                <Ban />
+                Cancel
+              </Button>
+            )}
+            {status === "SENT" && (
+              <Button
+                size="sm"
+                disabled={markingReady}
+                onClick={() => onMarkReady(round)}
+              >
+                {markingReady ? <Spinner /> : <CheckCheck />}
+                Mark ready
+              </Button>
+            )}
+          </div>
+        )}
+      </CardFooter>
     </Card>
   )
 }

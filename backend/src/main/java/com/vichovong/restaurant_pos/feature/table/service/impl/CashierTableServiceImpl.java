@@ -46,10 +46,12 @@ public class CashierTableServiceImpl implements CashierTableService {
                 .findByStatus(SessionStatus.ACTIVE).stream()
                 .collect(Collectors.toMap(s -> s.getTable().getId(), Function.identity()));
 
-        Map<UUID, List<OrderRound>> roundsBySessionId = orderRoundRepository
-                .findBySessionIdIn(sessionsByTableId.values().stream().map(TableSession::getId).toList())
-                .stream()
-                .collect(Collectors.groupingBy(r -> r.getSession().getId()));
+        Map<UUID, List<OrderRound>> roundsBySessionId = sessionsByTableId.isEmpty()
+                ? Map.of()
+                : orderRoundRepository
+                        .findBySessionIdIn(sessionsByTableId.values().stream().map(TableSession::getId).toList())
+                        .stream()
+                        .collect(Collectors.groupingBy(r -> r.getSession().getId()));
 
         return tables.stream()
                 .map(table -> toOverview(table, sessionsByTableId.get(table.getId()), roundsBySessionId))

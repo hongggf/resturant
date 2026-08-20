@@ -3,6 +3,7 @@ package com.vichovong.restaurant_pos.feature.order.service.impl;
 import com.vichovong.restaurant_pos.common.exception.ApiException;
 import com.vichovong.restaurant_pos.feature.cart.dto.CartLineAddRequest;
 import com.vichovong.restaurant_pos.feature.cart.dto.CartResponse;
+import com.vichovong.restaurant_pos.feature.cart.dto.CartSelectionRequest;
 import com.vichovong.restaurant_pos.feature.cart.entity.CartLineItem;
 import com.vichovong.restaurant_pos.feature.cart.entity.CartLineModifierSelection;
 import com.vichovong.restaurant_pos.feature.cart.service.CartPricingService;
@@ -13,6 +14,7 @@ import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundRequest;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundResponse;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRoundLineItem;
+import com.vichovong.restaurant_pos.feature.order.entity.OrderRoundModifierSelection;
 import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
 import com.vichovong.restaurant_pos.feature.order.mapper.OrderRoundMapper;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
@@ -149,6 +151,53 @@ public class CashierRoundServiceImpl implements CashierRoundService {
                 orderRoundRepository.findMaxRoundNumber(sessionId) + 1, null, lines, priced);
 
         orderRoundRepository.save(round);
+        return orderRoundMapper.toCashierRoundResponse(round);
+    }
+
+    @Override
+    @Transactional
+    public CashierRoundResponse updateLineSelections(UUID roundId, UUID lineId, List<CartSelectionRequest> selections) {
+        OrderRound round = requireRound(roundId);
+        if (round.getStatus() != RoundStatus.SENT && round.getStatus() != RoundStatus.READY) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Selections can only be edited on a SENT or READY round (current: " + round.getStatus() + ")");
+        }
+        OrderRoundLineItem line = round.getLines().stream()
+                .filter(l -> l.getId().equals(lineId))
+                .findFirst()
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Round line not found: " + lineId));
+        if (line.isVoided()) {
+            throw new ApiException(HttpStatus.CONFLICT, "Voided lines can't be edited");
+        }
+        MenuItem item = line.getMenuItem();
+        if (item == null) {
+            throw new ApiException(HttpStatus.CONFLICT, "This item no longer exists and can't be edited");
+        }
+
+        List<ModifierOption> options = cartValidationService.validateSelections(item, selections);
+
+        line.getSelections().clear();
+        BigDecimal unitPrice = line.getBasePrice();
+        for (int i = 0; i < options.size(); i++) {
+            ModifierOption option = options.get(i);
+            int quantity = selections.get(i).quantity();
+
+            OrderRoundModifierSelection selection = new OrderRoundModifierSelection();
+            selection.setOrderRoundLineItem(line);
+            selection.setModifierOption(option);
+            selection.setNameEn(option.getNameEn());
+            selection.setNameKm(option.getNameKm());
+            selection.setUnitPrice(option.getUnitPrice());
+            selection.setQuantity(quantity);
+            line.getSelections().add(selection);
+
+            unitPrice = unitPrice.add(option.getUnitPrice().multiply(BigDecimal.valueOf(quantity)));
+        }
+        unitPrice = unitPrice.setScale(2, RoundingMode.HALF_UP);
+        line.setUnitPrice(unitPrice);
+        line.setLineTotal(unitPrice.multiply(BigDecimal.valueOf(line.getQuantity())).setScale(2, RoundingMode.HALF_UP));
+
+        recomputeTotals(round);
         return orderRoundMapper.toCashierRoundResponse(round);
     }
 

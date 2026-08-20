@@ -14,4 +14,8 @@ public interface CartLineItemRepository extends JpaRepository<CartLineItem, UUID
     Optional<CartLineItem> findByIdAndSessionIdAndDeviceId(UUID id, UUID sessionId, UUID deviceId);
 
     void deleteBySessionIdAndDeviceId(UUID sessionId, UUID deviceId);
+
+    void deleteByMenuItemId(UUID menuItemId);
+
+    boolean existsByMenuItemId(UUID menuItemId);
 }

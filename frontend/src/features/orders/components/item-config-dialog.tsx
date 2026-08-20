@@ -57,6 +57,7 @@ export function ItemConfigDialog({
   }
 
   function toggle(groupIndex: number, option: ModifierOption) {
+    const group = groups[groupIndex].group
     setSelected((prev) => {
       const next = { ...prev }
       if (option.id! in next) {
@@ -65,12 +66,21 @@ export function ItemConfigDialog({
       }
       // Single-choice groups behave like radios: picking replaces.
       for (const o of groupOptions(groupIndex)) delete next[o.id!]
-      next[option.id!] = { option, quantity: 1 }
+      next[option.id!] = {
+        option,
+        quantity: 1,
+        group: { id: group?.id, nameEn: group?.nameEn, order: groupIndex },
+      }
       return next
     })
   }
 
-  function changeOptionQuantity(option: ModifierOption, delta: number) {
+  function changeOptionQuantity(
+    groupIndex: number,
+    option: ModifierOption,
+    delta: number
+  ) {
+    const group = groups[groupIndex].group
     setSelected((prev) => {
       const next = { ...prev }
       const current = next[option.id!]?.quantity ?? 0
@@ -78,7 +88,11 @@ export function ItemConfigDialog({
       if (updated <= 0) {
         delete next[option.id!]
       } else {
-        next[option.id!] = { option, quantity: updated }
+        next[option.id!] = {
+          option,
+          quantity: updated,
+          group: { id: group?.id, nameEn: group?.nameEn, order: groupIndex },
+        }
       }
       return next
     })
@@ -182,7 +196,7 @@ export function ItemConfigDialog({
                               variant="outline"
                               disabled={qty === 0}
                               onClick={() =>
-                                changeOptionQuantity(option, -1)
+                                changeOptionQuantity(index, option, -1)
                               }
                             >
                               <Minus />
@@ -197,7 +211,9 @@ export function ItemConfigDialog({
                               size="icon-xs"
                               variant="outline"
                               disabled={qty === 0 && atMax}
-                              onClick={() => changeOptionQuantity(option, 1)}
+                              onClick={() =>
+                                changeOptionQuantity(index, option, 1)
+                              }
                             >
                               <Plus />
                               <span className="sr-only">

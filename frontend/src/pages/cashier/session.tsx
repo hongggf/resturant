@@ -13,13 +13,14 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
+import { EditLineSelectionsDialog } from "@/features/orders/components/edit-line-selections-dialog"
 import { ReasonDialog } from "@/features/sessions/components/reason-dialog"
 import { RoundCard } from "@/features/sessions/components/round-card"
 import {
   useCancelRound,
   useMarkRoundReady,
   useSessionRounds,
-  useVoidLine,
+  useUpdateLineSelections,
 } from "@/features/sessions/hooks/use-session-rounds"
 import type { CashierRound, RoundLine } from "@/features/sessions/types"
 import { formatPrice } from "@/lib/format"
@@ -33,10 +34,10 @@ export function SessionPage() {
     useSessionRounds(sessionId)
   const markReady = useMarkRoundReady(sessionId)
   const cancelRound = useCancelRound(sessionId)
-  const voidLine = useVoidLine(sessionId)
+  const updateSelections = useUpdateLineSelections(sessionId)
 
   const [cancelling, setCancelling] = useState<CashierRound | null>(null)
-  const [voiding, setVoiding] = useState<{
+  const [editing, setEditing] = useState<{
     round: CashierRound
     line: RoundLine
   } | null>(null)
@@ -135,7 +136,7 @@ export function SessionPage() {
               }
               onMarkReady={(r) => r.id && markReady.mutate(r.id)}
               onCancel={setCancelling}
-              onVoidLine={(r, line) => setVoiding({ round: r, line })}
+              onEditLine={(r, line) => setEditing({ round: r, line })}
             />
           ))}
         </div>
@@ -188,23 +189,21 @@ export function SessionPage() {
           )
         }}
       />
-      <ReasonDialog
-        key={`void-${voiding?.line.id ?? "none"}`}
-        open={!!voiding}
-        onOpenChange={(open) => !open && setVoiding(null)}
-        title={`Void ${voiding?.line.quantity}× ${voiding?.line.nameEn}?`}
-        description="The item stays on the ticket crossed out, but is taken off the bill. This can't be undone."
-        confirmLabel="Void item"
-        pendingLabel="Voiding…"
-        pending={voidLine.isPending}
-        onConfirm={(reason) => {
-          if (!voiding?.round.id || !voiding.line.id) return
-          voidLine.mutate(
-            { roundId: voiding.round.id, lineId: voiding.line.id, reason },
-            { onSuccess: () => setVoiding(null) }
-          )
-        }}
-      />
+      {editing && (
+        <EditLineSelectionsDialog
+          key={editing.line.id}
+          line={editing.line}
+          saving={updateSelections.isPending}
+          onOpenChange={(open) => !open && setEditing(null)}
+          onSave={(selections) => {
+            if (!editing.round.id || !editing.line.id) return
+            updateSelections.mutate(
+              { roundId: editing.round.id, lineId: editing.line.id, selections },
+              { onSuccess: () => setEditing(null) }
+            )
+          }}
+        />
+      )}
     </>
   )
 }

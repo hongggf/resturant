@@ -14,11 +14,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ReceiptServiceImpl implements ReceiptService {
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
 
     private final ReceiptRepository receiptRepository;
     private final BillingService billingService;
@@ -29,7 +33,8 @@ public class ReceiptServiceImpl implements ReceiptService {
     public Receipt createForPayment(Payment payment) {
         Receipt receipt = new Receipt();
         receipt.setPayment(payment);
-        receipt.setReceiptNumber(String.format("R-%06d", receiptRepository.nextReceiptNumber()));
+        String datePart = LocalDate.now().format(DATE_FORMATTER);
+        receipt.setReceiptNumber(String.format("R-%s-%04d", datePart, receiptRepository.nextReceiptNumber()));
         return receiptRepository.save(receipt);
     }
 

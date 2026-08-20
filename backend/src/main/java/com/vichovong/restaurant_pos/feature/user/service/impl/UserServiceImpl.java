@@ -1,6 +1,8 @@
 package com.vichovong.restaurant_pos.feature.user.service.impl;
 
 import com.vichovong.restaurant_pos.common.exception.ApiException;
+import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
+import com.vichovong.restaurant_pos.feature.payment.repository.PaymentRepository;
 import com.vichovong.restaurant_pos.feature.user.dto.PasswordResetRequest;
 import com.vichovong.restaurant_pos.feature.user.dto.UserCreateRequest;
 import com.vichovong.restaurant_pos.feature.user.dto.UserResponse;
@@ -31,6 +33,8 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PaymentRepository paymentRepository;
+    private final OrderRoundRepository orderRoundRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
@@ -88,6 +92,10 @@ public class UserServiceImpl implements UserService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "You cannot delete your own account");
         }
         ensureNotLastAdmin(user, "Cannot delete the last admin account");
+        if (paymentRepository.existsByPaidById(id) || orderRoundRepository.existsByVoidedById(id)) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "User has transaction history (payments or voided items) and cannot be deleted — deactivate the account instead");
+        }
         userRepository.delete(user);
     }
 

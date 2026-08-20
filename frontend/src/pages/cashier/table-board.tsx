@@ -19,7 +19,7 @@ import {
 import type { TableOverview } from "@/features/sessions/types"
 
 const gridClass =
-  "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+  "grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8"
 
 export function TableBoardPage() {
   const navigate = useNavigate()
@@ -69,7 +69,7 @@ export function TableBoardPage() {
       {isPending ? (
         <div className={gridClass}>
           {Array.from({ length: 8 }, (_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
+            <Skeleton key={i} className="aspect-square rounded-xl" />
           ))}
         </div>
       ) : isError ? (

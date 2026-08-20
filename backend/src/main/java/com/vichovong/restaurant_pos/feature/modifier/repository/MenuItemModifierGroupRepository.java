@@ -15,5 +15,7 @@ public interface MenuItemModifierGroupRepository extends JpaRepository<MenuItemM
 
     boolean existsByMenuItemIdAndModifierGroupId(UUID menuItemId, UUID modifierGroupId);
 
+    boolean existsByMenuItemId(UUID menuItemId);
+
     boolean existsByModifierGroupId(UUID modifierGroupId);
 }
