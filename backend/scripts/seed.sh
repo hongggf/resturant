@@ -29,7 +29,25 @@ id_of() { jq -r '.data.id' <<<"$1"; }
 options() {
     local price=$1; shift
     printf '%s\n' "$@" | jq -R . | jq -s --arg p "$price" \
-        '[to_entries[] | {nameEn: .value, nameKm: .value, unitPrice: ($p|tonumber), available: true, sortOrder: (.key + 1)}]'
+        '[to_entries[] | {
+            nameEn: .value,
+            nameKm: .value,
+            unitPrice: ($p|tonumber),
+            imageUrl: (
+              if (.value | test("Beef Ball|Tendon Ball"; "i")) then "/food-images/juicy-beef-balls.jpg"
+              elif (.value | test("Fish Ball|Roe"; "i")) then "/food-images/fish-roe-meatballs.jpg"
+              elif (.value | test("USA Beef|Chicken"; "i")) then "/food-images/usa-beef.jpg"
+              elif (.value | test("Prawn Dumplings"; "i")) then "/food-images/prawn-dumplings.jpg"
+              elif (.value | test("Dumplings"; "i")) then "/food-images/sichuan-dumplings.jpg"
+              elif (.value | test("Rice"; "i")) then "/food-images/steamed-rice.jpg"
+              elif (.value | test("Apple"; "i")) then "/food-images/apple-tea.jpg"
+              elif (.value | test("Pineapple"; "i")) then "/food-images/pineapple-tea.jpg"
+              elif (.value | test("Honey Lemon"; "i")) then "/food-images/honey-lemon.jpg"
+              else null end
+            ),
+            available: true,
+            sortOrder: (.key + 1)
+        }]'
 }
 
 category() { # category <nameEn> <sortOrder> [description]
@@ -40,13 +58,30 @@ category() { # category <nameEn> <sortOrder> [description]
     id_of "$res"
 }
 
-menu_item() { # menu_item <nameEn> <price> <categoryId> [descriptionEn]
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+menu_item() { # menu_item <nameEn> <price> <categoryId> [descriptionEn] [imageFile]
+    local img_url=""
+    if [[ $# -ge 5 && -n "$5" ]]; then
+        img_url="/food-images/$5"
+    fi
     local res
-    res=$(post /api/v1/menu-items "$(jq -n --arg n "$1" --arg p "$2" --arg c "$3" --arg d "${4:-}" \
+    res=$(post /api/v1/menu-items "$(jq -n --arg n "$1" --arg p "$2" --arg c "$3" --arg d "${4:-}" --arg img "$img_url" \
         '{nameEn: $n, nameKm: $n, descriptionEn: $d, descriptionKm: $d, price: ($p|tonumber),
-          currencyCode: "USD", available: true, categoryId: $c}')")
+          currencyCode: "USD", imageUrl: (if $img == "" then null else $img end), available: true, categoryId: $c}')")
     echo "  ✓ item      $1 (\$$2)" >&2
-    id_of "$res"
+    local item_id
+    item_id=$(id_of "$res")
+    if [[ $# -ge 5 && -n "$5" ]]; then
+        local img_path="$SCRIPT_DIR/../uploads/seed-images/$5"
+        if [[ -f "$img_path" ]]; then
+            curl -s -X POST "$BASE/api/v1/menu-items/$item_id/image" \
+                -H "Authorization: Bearer $TOKEN" \
+                -F "file=@$img_path" >/dev/null
+            echo "    ↳ image   uploaded ($5)" >&2
+        fi
+    fi
+    echo "$item_id"
 }
 
 modifier_group() { # modifier_group <nameEn> <minChoice> <maxChoice> <optionsJson>
@@ -118,19 +153,19 @@ GRP_ADDON=$(modifier_group "Choice of Adds-On" 0 3 "$ADDON_OPTS")
 
 echo "== Menu items =="
 # NOTE: API requires price > 0, so DIY Malatang uses 0.01 instead of 0.
-ITEM_DIY=$(menu_item "DIY Malatang" 0.01 "$CAT_DIY" "Build your own Malatang")
-menu_item "Kaixin World Football Set" 8.99 "$CAT_COMBO" "2 Signature Malatang + Dumplings + Drink" >/dev/null
-menu_item "Half Steamed Rice" 0.35 "$CAT_SIDE" >/dev/null
-menu_item "Full Steamed Rice" 0.70 "$CAT_SIDE" >/dev/null
-menu_item "Sichuan Pork Dumplings" 1.50 "$CAT_SIDE" >/dev/null
-menu_item "Pineapple Lemon Jasmine Tea" 1.98 "$CAT_DRINK" >/dev/null
-menu_item "Red Apple Jasmine Tea" 1.98 "$CAT_DRINK" >/dev/null
-menu_item "Honey Lemon Kiss" 1.98 "$CAT_DRINK" >/dev/null
-menu_item "Cambodia Water" 1.00 "$CAT_SOFT" >/dev/null
-menu_item "Cambodia Cola" 1.00 "$CAT_SOFT" >/dev/null
-menu_item "Coca-Cola Classic" 1.00 "$CAT_SOFT" >/dev/null
-menu_item "Jia Duo Bao" 1.20 "$CAT_SOFT" >/dev/null
-menu_item "Big Heart Lollipop" 1.00 "$CAT_CANDY" >/dev/null
+ITEM_DIY=$(menu_item "DIY Malatang" 0.01 "$CAT_DIY" "Build your own Malatang" "diy-malatang.jpg")
+menu_item "Kaixin World Football Set" 8.99 "$CAT_COMBO" "2 Signature Malatang + Dumplings + Drink" "combo-set.jpg" >/dev/null
+menu_item "Half Steamed Rice" 0.35 "$CAT_SIDE" "" "steamed-rice.jpg" >/dev/null
+menu_item "Full Steamed Rice" 0.70 "$CAT_SIDE" "" "steamed-rice.jpg" >/dev/null
+menu_item "Sichuan Pork Dumplings" 1.50 "$CAT_SIDE" "" "sichuan-dumplings.jpg" >/dev/null
+menu_item "Pineapple Lemon Jasmine Tea" 1.98 "$CAT_DRINK" "" "pineapple-tea.jpg" >/dev/null
+menu_item "Red Apple Jasmine Tea" 1.98 "$CAT_DRINK" "" "apple-tea.jpg" >/dev/null
+menu_item "Honey Lemon Kiss" 1.98 "$CAT_DRINK" "" "honey-lemon.jpg" >/dev/null
+menu_item "Cambodia Water" 1.00 "$CAT_SOFT" "" "" >/dev/null
+menu_item "Cambodia Cola" 1.00 "$CAT_SOFT" "" "" >/dev/null
+menu_item "Coca-Cola Classic" 1.00 "$CAT_SOFT" "" "" >/dev/null
+menu_item "Jia Duo Bao" 1.20 "$CAT_SOFT" "" "herbal-tea.jpg" >/dev/null
+menu_item "Big Heart Lollipop" 1.00 "$CAT_CANDY" "" "lollipop.jpg" >/dev/null
 
 # --- 4. attach modifier groups to DIY Malatang -------------------------------
 

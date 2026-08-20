@@ -16,8 +16,8 @@ import {
   useCategoryOptions,
   useMenuItems,
 } from "@/features/menu/hooks/use-menu-items"
+import { resolveItemImage } from "@/features/menu/lib/food-image"
 import type { MenuItem } from "@/features/menu/types"
-import { assetUrl } from "@/lib/api/client"
 import { formatPrice } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -104,7 +104,7 @@ export function MenuBrowser({ onPick }: MenuBrowserProps) {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => {
-            const image = assetUrl(item.imageUrl)
+            const image = resolveItemImage(item.nameEn, item.imageUrl)
             return (
               <button
                 key={item.id}

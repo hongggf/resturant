@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Switch } from "@/components/ui/switch"
-import { assetUrl } from "@/lib/api/client"
+import { resolveItemImage } from "../lib/food-image"
 import { formatPrice } from "@/lib/format"
 import type { MenuItem } from "../types"
 
@@ -37,7 +37,7 @@ export function MenuItemCard({
   onToggleAvailable,
   togglePending,
 }: MenuItemCardProps) {
-  const image = assetUrl(item.imageUrl)
+  const image = resolveItemImage(item.nameEn, item.imageUrl)
 
   return (
     <Card className="gap-3 overflow-hidden pt-0 pb-3">

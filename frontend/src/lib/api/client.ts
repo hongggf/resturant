@@ -63,5 +63,7 @@ export async function apiFetch<T>(
 /** Resolve a backend-relative asset path (e.g. /uploads/…) to a fetchable URL. */
 export function assetUrl(path: string | null | undefined): string | null {
   if (!path) return null
-  return /^https?:\/\//.test(path) ? path : `${BASE_URL}${path}`
+  if (/^https?:\/\//.test(path)) return path
+  if (path.startsWith("/food-images/")) return path
+  return `${BASE_URL}${path}`
 }

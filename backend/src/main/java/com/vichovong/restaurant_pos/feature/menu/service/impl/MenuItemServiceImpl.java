@@ -68,7 +68,7 @@ public class MenuItemServiceImpl implements MenuItemService {
     public MenuItemResponse create(MenuItemCreateRequest request) {
         MenuItem menuItem = new MenuItem();
         applyRequest(menuItem, request.nameEn(), request.nameKm(), request.descriptionEn(), request.descriptionKm(),
-                request.price(), request.currencyCode(), request.available(), request.categoryId());
+                request.price(), request.currencyCode(), request.imageUrl(), request.available(), request.categoryId());
         return menuItemMapper.toResponse(menuItemRepository.save(menuItem));
     }
 
@@ -77,7 +77,7 @@ public class MenuItemServiceImpl implements MenuItemService {
     public MenuItemResponse update(UUID id, MenuItemUpdateRequest request) {
         MenuItem menuItem = findMenuItem(id);
         applyRequest(menuItem, request.nameEn(), request.nameKm(), request.descriptionEn(), request.descriptionKm(),
-                request.price(), request.currencyCode(), request.available(), request.categoryId());
+                request.price(), request.currencyCode(), request.imageUrl(), request.available(), request.categoryId());
         return menuItemMapper.toResponse(menuItem);
     }
 
@@ -116,13 +116,16 @@ public class MenuItemServiceImpl implements MenuItemService {
     }
 
     private void applyRequest(MenuItem menuItem, String nameEn, String nameKm, String descriptionEn, String descriptionKm,
-                               BigDecimal price, String currencyCode, boolean available, UUID categoryId) {
+                               BigDecimal price, String currencyCode, String imageUrl, boolean available, UUID categoryId) {
         menuItem.setNameEn(nameEn);
         menuItem.setNameKm(nameKm);
         menuItem.setDescriptionEn(descriptionEn);
         menuItem.setDescriptionKm(descriptionKm);
         menuItem.setPrice(price);
         menuItem.setCurrency(findCurrency(currencyCode));
+        if (imageUrl != null) {
+            menuItem.setImageUrl(imageUrl.isBlank() ? null : imageUrl);
+        }
         menuItem.setAvailable(available);
         menuItem.setCategory(findCategory(categoryId));
     }

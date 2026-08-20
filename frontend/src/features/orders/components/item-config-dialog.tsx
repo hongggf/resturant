@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { choiceRule } from "@/features/modifiers/lib/choice-rule"
 import type { ModifierOption } from "@/features/modifiers/types"
 import type { MenuItem } from "@/features/menu/types"
+import { resolveItemImage } from "@/features/menu/lib/food-image"
 import { formatPrice } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useItemModifierGroups } from "../hooks/use-manual-order"
@@ -113,18 +114,27 @@ export function ItemConfigDialog({
       0
     )
 
+  const heroImage = resolveItemImage(item.nameEn, item.imageUrl)
+
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85svh] flex-col">
-        <DialogHeader>
-          <DialogTitle>{item.nameEn}</DialogTitle>
-          <DialogDescription>
-            {formatPrice(item.price, item.currencyCode)}
-            {item.nameKm ? ` · ${item.nameKm}` : ""}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="flex max-h-[85svh] flex-col overflow-hidden p-0">
+        {heroImage && (
+          <div className="relative aspect-[16/7] w-full shrink-0 overflow-hidden bg-muted">
+            <img src={heroImage} alt={item.nameEn} className="size-full object-cover" />
+          </div>
+        )}
+        <div className="p-6 pt-4 pb-0">
+          <DialogHeader>
+            <DialogTitle>{item.nameEn}</DialogTitle>
+            <DialogDescription>
+              {formatPrice(item.price, item.currencyCode)}
+              {item.nameKm ? ` · ${item.nameKm}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="-mx-1 flex-1 space-y-4 overflow-y-auto px-1">
+        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-2">
           {isPending ? (
             <div className="flex justify-center py-6">
               <Spinner />
@@ -155,12 +165,13 @@ export function ItemConfigDialog({
                     {groupOptions(index).map((option) => {
                       const qty = selected[option.id!]?.quantity ?? 0
                       const price = option.unitPrice ?? 0
+                      const optionImg = resolveItemImage(option.nameEn, option.imageUrl)
                       if (single) {
                         return (
                           <Label
                             key={option.id}
                             className={cn(
-                              "hover:bg-muted/50 flex items-center gap-2 rounded-md border p-2 font-normal",
+                              "hover:bg-muted/50 flex items-center gap-2.5 rounded-md border p-2 font-normal cursor-pointer",
                               qty > 0 && "border-primary bg-primary/5"
                             )}
                           >
@@ -168,6 +179,13 @@ export function ItemConfigDialog({
                               checked={qty > 0}
                               onCheckedChange={() => toggle(index, option)}
                             />
+                            {optionImg && (
+                              <img
+                                src={optionImg}
+                                alt={option.nameEn}
+                                className="size-8 shrink-0 rounded object-cover"
+                              />
+                            )}
                             <span className="flex-1 text-sm">
                               {option.nameEn}
                             </span>
@@ -183,10 +201,17 @@ export function ItemConfigDialog({
                         <div
                           key={option.id}
                           className={cn(
-                            "flex items-center gap-2 rounded-md border p-2",
+                            "flex items-center gap-2.5 rounded-md border p-2",
                             qty > 0 && "border-primary bg-primary/5"
                           )}
                         >
+                          {optionImg && (
+                            <img
+                              src={optionImg}
+                              alt={option.nameEn}
+                              className="size-8 shrink-0 rounded object-cover"
+                            />
+                          )}
                           <span className="flex-1 text-sm">
                             {option.nameEn}
                           </span>

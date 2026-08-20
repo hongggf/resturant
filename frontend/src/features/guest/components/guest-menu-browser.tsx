@@ -12,7 +12,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
-import { assetUrl } from "@/lib/api/client"
+import { resolveItemImage } from "@/features/menu/lib/food-image"
 import { formatPrice } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useGuestCategories, useGuestMenuItems } from "../hooks/use-guest-menu"
@@ -100,7 +100,7 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {items.map((item) => {
-            const image = assetUrl(item.imageUrl)
+            const image = resolveItemImage(item.nameEn, item.imageUrl)
             return (
               <button
                 key={item.id}
