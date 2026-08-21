@@ -36,13 +36,26 @@ options() {
             imageUrl: (
               if (.value | test("Beef Ball|Tendon Ball"; "i")) then "/food-images/juicy-beef-balls.jpg"
               elif (.value | test("Fish Ball|Roe"; "i")) then "/food-images/fish-roe-meatballs.jpg"
-              elif (.value | test("USA Beef|Chicken"; "i")) then "/food-images/usa-beef.jpg"
+              elif (.value | test("Tender Chicken"; "i")) then "/food-images/tender-chicken.jpg"
+              elif (.value | test("USA Beef"; "i")) then "/food-images/usa-beef.jpg"
               elif (.value | test("Prawn Dumplings"; "i")) then "/food-images/prawn-dumplings.jpg"
               elif (.value | test("Dumplings"; "i")) then "/food-images/sichuan-dumplings.jpg"
               elif (.value | test("Rice"; "i")) then "/food-images/steamed-rice.jpg"
               elif (.value | test("Apple"; "i")) then "/food-images/apple-tea.jpg"
               elif (.value | test("Pineapple"; "i")) then "/food-images/pineapple-tea.jpg"
               elif (.value | test("Honey Lemon"; "i")) then "/food-images/honey-lemon.jpg"
+              elif (.value | test("Deep Fried Tofu|Fried Tofu"; "i")) then "/food-images/fried-tofu.jpg"
+              elif (.value | test("Soft Tofu"; "i")) then "/food-images/soft-tofu.jpg"
+              elif (.value | test("Lotus Roots"; "i")) then "/food-images/lotus-roots.jpg"
+              elif (.value | test("Needle Mushroom|Crab Mushroom"; "i")) then "/food-images/needle-mushroom.jpg"
+              elif (.value | test("Broccoli"; "i")) then "/food-images/broccoli.jpg"
+              elif (.value | test("Crab Stick|Crab Steak"; "i")) then "/food-images/crab-stick.jpg"
+              elif (.value | test("Bacon"; "i")) then "/food-images/bacon.jpg"
+              elif (.value | test("Pork Flower Sausage|Hot Dog"; "i")) then "/food-images/flower-sausage.jpg"
+              elif (.value | test("Handmade Noodles"; "i")) then "/food-images/handmade-noodles.jpg"
+              elif (.value | test("Black Fungus|White Fungus"; "i")) then "/food-images/black-fungus.jpg"
+              elif (.value | test("Fish Cake"; "i")) then "/food-images/fish-cake.jpg"
+              elif (.value | test("White Stomach"; "i")) then "/food-images/white-stomach.jpg"
               else null end
             ),
             available: true,
