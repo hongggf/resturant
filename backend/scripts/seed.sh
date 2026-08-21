@@ -56,6 +56,12 @@ options() {
               elif (.value | test("Black Fungus|White Fungus"; "i")) then "/food-images/black-fungus.jpg"
               elif (.value | test("Fish Cake"; "i")) then "/food-images/fish-cake.jpg"
               elif (.value | test("White Stomach"; "i")) then "/food-images/white-stomach.jpg"
+              elif (.value | test("Duck Blood"; "i")) then "/food-images/duck-blood.jpg"
+              elif (.value | test("Bamboo Shoot"; "i")) then "/food-images/bamboo-shoot.jpg"
+              elif (.value | test("Black Chicken"; "i")) then "/food-images/black-chicken.jpg"
+              elif (.value | test("Potato Noodles"; "i")) then "/food-images/potato-noodles.jpg"
+              elif (.value | test("Dried Tofu Strips"; "i")) then "/food-images/dried-tofu-strips.jpg"
+              elif (.value | test("Mee Chiet Noodles"; "i")) then "/food-images/mee-chiet-noodles.jpg"
               else null end
             ),
             available: true,
