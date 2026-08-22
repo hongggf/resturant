@@ -34,10 +34,8 @@ options() {
             nameKm: .value,
             unitPrice: ($p|tonumber),
             imageUrl: (
-              if (.value | test("Tendon Ball"; "i")) then "/food-images/beef-tendon-ball.jpg"
-              elif (.value | test("Beef Ball"; "i")) then "/food-images/juicy-beef-balls.jpg"
+              if (.value | test("Beef Ball"; "i")) then "/food-images/juicy-beef-balls.jpg"
               elif (.value | test("Fish Roe|Roe"; "i")) then "/food-images/fish-roe-meatballs.jpg"
-              elif (.value | test("Kaixin Fish Ball"; "i")) then "/food-images/kaixin-fish-ball.jpg"
               elif (.value | test("Fish Ball"; "i")) then "/food-images/mini-fish-balls.jpg"
               elif (.value | test("Tender Chicken"; "i")) then "/food-images/tender-chicken.jpg"
               elif (.value | test("USA Beef"; "i")) then "/food-images/usa-beef.jpg"
@@ -56,10 +54,8 @@ options() {
               elif (.value | test("Crab Mushroom"; "i")) then "/food-images/crab-mushroom.jpg"
               elif (.value | test("Needle Mushroom"; "i")) then "/food-images/needle-mushroom.jpg"
               elif (.value | test("Broccoli"; "i")) then "/food-images/broccoli.jpg"
-              elif (.value | test("Crab Steak"; "i")) then "/food-images/crab-steak.jpg"
               elif (.value | test("Crab Stick"; "i")) then "/food-images/crab-stick.jpg"
               elif (.value | test("Bacon"; "i")) then "/food-images/bacon.jpg"
-              elif (.value | test("Hot Dog"; "i")) then "/food-images/hot-dog.jpg"
               elif (.value | test("Pork Flower Sausage"; "i")) then "/food-images/flower-sausage.jpg"
               elif (.value | test("Handmade Noodles"; "i")) then "/food-images/handmade-noodles.jpg"
               elif (.value | test("White Fungus"; "i")) then "/food-images/white-fungus.jpg"
@@ -159,8 +155,8 @@ GRP_MEAT=$(modifier_group "Meat" 0 20 "$(options 0.90 \
 
 GRP_MEATBALL=$(modifier_group "Meat Ball" 0 30 "$(options 0.30 \
     "Juicy Beef Ball (2pcs)" "Mini Juicy Fish Ball" "Fish Roe Meatball" "Mini Dumplings" \
-    "Kiss Hot Dog" "Crab Stick" "Crab Steak" "Duck Blood" "Potato Noodles" \
-    "Beef Tendon Ball" "Kaixin Fish Ball" "Bacon (4pcs)" "Kaixin Dumplings" \
+    "Crab Stick" "Duck Blood" "Potato Noodles" \
+    "Bacon (4pcs)" "Kaixin Dumplings" \
     "Pork Flower Sausage" "Fish Cake" "Prawn Dumplings" "Fish Roll Meatball")")
 
 GRP_VEGGIE=$(modifier_group "Veggie" 0 30 "$(options 0.30 \
