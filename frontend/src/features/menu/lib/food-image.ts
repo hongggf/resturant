@@ -46,6 +46,14 @@ const KNOWN_FOOD_IMAGES: Record<string, string> = {
   "potato noodles": "/food-images/potato-noodles.jpg",
   "dried tofu strips": "/food-images/dried-tofu-strips.jpg",
   "mee chiet noodles": "/food-images/mee-chiet-noodles.jpg",
+  "rice noodles": "/food-images/rice-noodles.jpg",
+  "tang-o": "/food-images/chrysanthemum-greens.jpg",
+  "chrysanthemum greens": "/food-images/chrysanthemum-greens.jpg",
+  "romaine lettuce": "/food-images/romaine-lettuce.jpg",
+  "cambodia water": "/food-images/cambodia-water.jpg",
+  "cambodia cola": "/food-images/cambodia-cola.jpg",
+  "coca-cola classic": "/food-images/coca-cola.jpg",
+  "coca-cola": "/food-images/coca-cola.jpg",
 }
 
 /**

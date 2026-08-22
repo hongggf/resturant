@@ -62,6 +62,9 @@ options() {
               elif (.value | test("Potato Noodles"; "i")) then "/food-images/potato-noodles.jpg"
               elif (.value | test("Dried Tofu Strips"; "i")) then "/food-images/dried-tofu-strips.jpg"
               elif (.value | test("Mee Chiet Noodles"; "i")) then "/food-images/mee-chiet-noodles.jpg"
+              elif (.value | test("Rice Noodles"; "i")) then "/food-images/rice-noodles.jpg"
+              elif (.value | test("Tang-O|Chrysanthemum"; "i")) then "/food-images/chrysanthemum-greens.jpg"
+              elif (.value | test("Romaine Lettuce"; "i")) then "/food-images/romaine-lettuce.jpg"
               else null end
             ),
             available: true,
@@ -180,9 +183,9 @@ menu_item "Sichuan Pork Dumplings" 1.50 "$CAT_SIDE" "" "sichuan-dumplings.jpg" >
 menu_item "Pineapple Lemon Jasmine Tea" 1.98 "$CAT_DRINK" "" "pineapple-tea.jpg" >/dev/null
 menu_item "Red Apple Jasmine Tea" 1.98 "$CAT_DRINK" "" "apple-tea.jpg" >/dev/null
 menu_item "Honey Lemon Kiss" 1.98 "$CAT_DRINK" "" "honey-lemon.jpg" >/dev/null
-menu_item "Cambodia Water" 1.00 "$CAT_SOFT" "" "" >/dev/null
-menu_item "Cambodia Cola" 1.00 "$CAT_SOFT" "" "" >/dev/null
-menu_item "Coca-Cola Classic" 1.00 "$CAT_SOFT" "" "" >/dev/null
+menu_item "Cambodia Water" 1.00 "$CAT_SOFT" "" "cambodia-water.jpg" >/dev/null
+menu_item "Cambodia Cola" 1.00 "$CAT_SOFT" "" "cambodia-cola.jpg" >/dev/null
+menu_item "Coca-Cola Classic" 1.00 "$CAT_SOFT" "" "coca-cola.jpg" >/dev/null
 menu_item "Jia Duo Bao" 1.20 "$CAT_SOFT" "" "herbal-tea.jpg" >/dev/null
 menu_item "Big Heart Lollipop" 1.00 "$CAT_CANDY" "" "lollipop.jpg" >/dev/null
 
