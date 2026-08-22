@@ -114,7 +114,7 @@ export function ItemConfigDialog({
       0
     )
 
-  const heroImage = resolveItemImage(item.nameEn, item.imageUrl)
+  const heroImage = resolveItemImage(item.nameEn, item.imageUrl, "hero")
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
@@ -165,7 +165,7 @@ export function ItemConfigDialog({
                     {groupOptions(index).map((option) => {
                       const qty = selected[option.id!]?.quantity ?? 0
                       const price = option.unitPrice ?? 0
-                      const optionImg = resolveItemImage(option.nameEn, option.imageUrl)
+                      const optionImg = resolveItemImage(option.nameEn, option.imageUrl, "thumb")
                       if (single) {
                         return (
                           <Label

@@ -37,7 +37,7 @@ export function MenuItemCard({
   onToggleAvailable,
   togglePending,
 }: MenuItemCardProps) {
-  const image = resolveItemImage(item.nameEn, item.imageUrl)
+  const image = resolveItemImage(item.nameEn, item.imageUrl, "card")
 
   return (
     <Card className="gap-3 overflow-hidden pt-0 pb-3">

@@ -65,25 +65,54 @@ const KNOWN_FOOD_IMAGES: Record<string, string> = {
 }
 
 /**
- * Resolves a displayable image URL for a food item or modifier option.
- * If a custom uploaded image exists, it resolves via assetUrl.
- * Otherwise, it matches against the known generated food images library.
+ * The rendered sizes `scripts/generate-food-images.py` produces:
+ *   hero  — 800px, dialog headers
+ *   card  — 512px, menu grid cards
+ *   thumb —  96px, modifier option rows
+ */
+export type FoodImageSize = "hero" | "card" | "thumb"
+
+const BARE_FOOD_IMAGE = /^\/food-images\/([^/]+)$/
+
+/**
+ * Points a bare `/food-images/x.jpg` at the variant for `size`. Hero is served
+ * at the bare path, so it needs no rewrite; matching on the bare form also
+ * keeps this idempotent. Anything else — an uploaded `/uploads/` file, an
+ * absolute URL — has no variants and is returned untouched.
+ */
+function sizedFoodImage(path: string, size: FoodImageSize): string {
+  if (size === "hero") return path
+  return path.replace(BARE_FOOD_IMAGE, `/food-images/${size}/$1`)
+}
+
+/**
+ * Resolves a displayable image URL for a food item or modifier option, at the
+ * variant matching how the caller renders it.
+ *
+ * If a custom image exists it resolves via assetUrl — which passes
+ * `/food-images/` paths (what migrations V11-V13 store) straight through, so
+ * those still get sized. Otherwise it matches the known food image library.
+ *
+ * `size` defaults to hero because that is the bare path: a caller that forgets
+ * to pick gets an oversized image, never a missing one.
  */
 export function resolveItemImage(
   nameEn?: string | null,
-  customImageUrl?: string | null
+  customImageUrl?: string | null,
+  size: FoodImageSize = "hero"
 ): string | null {
   if (customImageUrl) {
-    return assetUrl(customImageUrl)
+    const resolved = assetUrl(customImageUrl)
+    return resolved && sizedFoodImage(resolved, size)
   }
   if (!nameEn) return null
   const normalized = nameEn.trim().toLowerCase()
   const exact = KNOWN_FOOD_IMAGES[normalized]
-  if (exact) return exact
+  if (exact) return sizedFoodImage(exact, size)
 
   for (const [key, value] of Object.entries(KNOWN_FOOD_IMAGES)) {
     if (normalized.includes(key) || key.includes(normalized)) {
-      return value
+      return sizedFoodImage(value, size)
     }
   }
   return null

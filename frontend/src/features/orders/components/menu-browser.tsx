@@ -104,7 +104,7 @@ export function MenuBrowser({ onPick }: MenuBrowserProps) {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => {
-            const image = resolveItemImage(item.nameEn, item.imageUrl)
+            const image = resolveItemImage(item.nameEn, item.imageUrl, "card")
             return (
               <button
                 key={item.id}

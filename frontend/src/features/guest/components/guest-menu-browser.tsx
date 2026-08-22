@@ -100,7 +100,7 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {items.map((item) => {
-            const image = resolveItemImage(item.nameEn, item.imageUrl)
+            const image = resolveItemImage(item.nameEn, item.imageUrl, "card")
             return (
               <button
                 key={item.id}
