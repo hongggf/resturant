@@ -20,7 +20,7 @@ export function clearToken() {
   localStorage.removeItem(EXPIRES_AT_KEY)
 }
 
-export type Role = "ADMIN" | "CASHIER"
+export type Role = "ADMIN" | "CASHIER" | "CHEF"
 
 interface JwtPayload {
   sub?: string
@@ -53,7 +53,8 @@ export function getRoles(): Role[] {
     .filter((value): value is string => typeof value === "string")
   const normalized = raw.map((role) => role.replace(/^ROLE_/, "").toUpperCase())
   return [...new Set(normalized)].filter(
-    (role): role is Role => role === "ADMIN" || role === "CASHIER"
+    (role): role is Role =>
+      role === "ADMIN" || role === "CASHIER" || role === "CHEF"
   )
 }
 

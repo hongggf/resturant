@@ -18,8 +18,9 @@ A modern, full-stack Restaurant Management and Point of Sale (POS) system engine
 - [Key Features](#-key-features)
   - [1. 📱 Customer QR-at-Table Ordering](#1--customer-qr-at-table-ordering)
   - [2. 🖥️ Cashier & Till Terminal](#2-️-cashier--till-terminal)
-  - [3. ⚙️ Admin Backoffice](#3-️-admin-backoffice)
-  - [4. 🛡️ Architectural Highlights](#4-️-architectural-highlights)
+  - [3. 👨‍🍳 Kitchen Display](#3--kitchen-display)
+  - [4. ⚙️ Admin Backoffice](#4-️-admin-backoffice)
+  - [5. 🛡️ Architectural Highlights](#5-️-architectural-highlights)
 - [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
@@ -58,13 +59,20 @@ A modern, full-stack Restaurant Management and Point of Sale (POS) system engine
   - **KHQR**: Direct QR payment verification workflows.
 - **Bilingual Printable Receipts**: Instant receipt payload generation upon payment confirmation.
 
-### 3. ⚙️ Admin Backoffice
+### 3. 👨‍🍳 Kitchen Display
+- **Dedicated Cook Queue**: A `CHEF` account lands on `/kitchen`, a polled FIFO board of every `SENT` round across all tables, oldest first.
+- **Kitchen-Shaped Tickets**: Table number, round number and waiting time lead; items show quantity, bilingual names, modifier selections and guest remarks. The ticket shows no prices (the round payload still carries totals, so this is a UI choice, not an access boundary).
+- **Ticket Ageing**: Tickets pass 10 minutes to amber and 20 minutes to red so a backed-up pass is visible at a glance.
+- **Narrow Permissions**: The chef's entire API surface is `KitchenController` — read the queue, mark a round ready. Cancel, void, payments and the table board stay with the cashier.
+- **Shared Responsibility**: The cashier keeps its own mark-ready control as a fallback when the kitchen tablet is unavailable.
+
+### 4. ⚙️ Admin Backoffice
 - **Category & Menu Management**: Create, reorder, toggle availability, upload dish photos, and set bilingual descriptions.
 - **Modifier Groups**: Attach modular modifier groups to menu items with enforceability rules (`minChoice`, `maxChoice`, unit pricing).
 - **Table Management**: Setup floor layouts, manage table numbers, and generate/download table QR tokens.
-- **User & Role Management**: Provision staff accounts with granular role-based permissions (`ADMIN`, `CASHIER`).
+- **User & Role Management**: Provision staff accounts with granular role-based permissions (`ADMIN`, `CASHIER`, `CHEF`).
 
-### 4. 🛡️ Architectural Highlights
+### 5. 🛡️ Architectural Highlights
 - **Immutable Order Rounds vs. Mutable Carts**: Carts exist as mutable drafts; submitting copies them into immutable `OrderRoundLineItem` snapshots preserving historical pricing and modifier selections.
 - **Server-Authoritative Pricing**: All item prices, modifier deltas, tax rates, and exchange rates are computed exclusively on the backend.
 - **Pessimistic Session Locking**: Prevents race conditions and double-submits during cart sends and payment confirmations.
@@ -88,7 +96,7 @@ A modern, full-stack Restaurant Management and Point of Sale (POS) system engine
 |---|---|---|
 | **Framework & Build** | React 19 + TypeScript | Vite 6 build tool with HMR |
 | **Styling & UI** | Tailwind CSS v4 + Radix UI | shadcn/ui component architecture, Geist font |
-| **Routing** | React Router v8 | Guarded route trees (Admin, Cashier, Guest sessions) |
+| **Routing** | React Router v8 | Guarded route trees (Admin, Cashier, Kitchen, Guest sessions) |
 | **State & Data Fetching** | TanStack Query v5 | Auto-caching, optimistic UI, background polling |
 | **Tables & Forms** | TanStack Table + React Hook Form | Schema-driven form validation with Zod |
 | **Utilities** | Lucide React, qrcode.react, Sonner | Icons, QR generation, toast notifications |
@@ -140,7 +148,7 @@ restaurant/
 │   │   ├── components/         # Shared shadcn/ui components
 │   │   ├── features/           # Feature-specific state, API hooks & modals
 │   │   ├── layouts/            # AdminLayout, CashierLayout, GuestLayout
-│   │   └── pages/              # Admin, Cashier, Guest, and Auth pages
+│   │   └── pages/              # Admin, Cashier, Kitchen, Guest, and Auth pages
 │   ├── Dockerfile              # Multi-stage Node build with Nginx
 │   ├── nginx.conf              # Production Nginx reverse proxy configuration
 │   └── package.json
@@ -282,8 +290,9 @@ Configuration is managed via the root `.env` file:
          │
          ▼
  ┌────────────────┐
- │ Cashier Queue  │ ──► GET /api/v1/rounds?status=SENT (FIFO Cook Queue)
- │ & Table Board  │ ──► PUT /api/v1/rounds/{id}/ready (status: READY)
+ │ Kitchen Queue  │ ──► GET /api/v1/kitchen/rounds?status=SENT (FIFO Cook Queue)
+ │ & Table Board  │ ──► PUT /api/v1/kitchen/rounds/{id}/ready (status: READY)
+ │                │     Cashier equivalents live at /api/v1/rounds/...
  └────────────────┘
          │
          ▼

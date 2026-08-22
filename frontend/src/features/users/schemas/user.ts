@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 const roles = z
-  .array(z.enum(["ADMIN", "CASHIER"]))
+  .array(z.enum(["ADMIN", "CASHIER", "CHEF"]))
   .min(1, "Select at least one role")
 
 export const createUserSchema = z.object({

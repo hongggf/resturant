@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate } from "react-router"
 import { Spinner } from "@/components/ui/spinner"
 import { AdminLayout } from "@/layouts/admin-layout"
 import { CashierLayout } from "@/layouts/cashier-layout"
+import { KitchenLayout } from "@/layouts/kitchen-layout"
 import { GuestLayout } from "@/layouts/guest-layout"
 import { GuestSessionGuard } from "./guest-session-guard"
 import { RequireAuth } from "./require-auth"
@@ -21,6 +22,8 @@ const ManualOrderPage = lazy(() => import("@/pages/cashier/manual-order").then(m
 const ReceiptPage = lazy(() => import("@/pages/cashier/receipt").then(m => ({ default: m.ReceiptPage })))
 const SessionPage = lazy(() => import("@/pages/cashier/session").then(m => ({ default: m.SessionPage })))
 const TableBoardPage = lazy(() => import("@/pages/cashier/table-board").then(m => ({ default: m.TableBoardPage })))
+
+const KitchenQueuePage = lazy(() => import("@/pages/kitchen/queue").then(m => ({ default: m.KitchenQueuePage })))
 
 const GuestCartPage = lazy(() => import("@/pages/guest/cart").then(m => ({ default: m.GuestCartPage })))
 const GuestMenuPage = lazy(() => import("@/pages/guest/menu").then(m => ({ default: m.GuestMenuPage })))
@@ -107,6 +110,17 @@ export const router = createBrowserRouter([
           { path: "sessions/:sessionId/bill", element: withSuspense(BillPage) },
           { path: "sessions/:sessionId/receipt", element: withSuspense(ReceiptPage) },
         ],
+      },
+    ],
+  },
+  {
+    // Admins can work the pass too, e.g. checking on a backed-up queue.
+    element: <RequireAuth roles={["CHEF", "ADMIN"]} />,
+    children: [
+      {
+        path: "/kitchen",
+        element: <KitchenLayout />,
+        children: [{ index: true, element: withSuspense(KitchenQueuePage) }],
       },
     ],
   },

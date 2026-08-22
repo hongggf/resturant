@@ -5,4 +5,4 @@ export type UserCreateRequest = components["schemas"]["UserCreateRequest"]
 export type UserUpdateRequest = components["schemas"]["UserUpdateRequest"]
 export type PasswordResetRequest =
   components["schemas"]["PasswordResetRequest"]
-export type UserRole = "ADMIN" | "CASHIER"
+export type UserRole = "ADMIN" | "CASHIER" | "CHEF"

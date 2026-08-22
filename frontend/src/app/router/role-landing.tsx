@@ -15,6 +15,9 @@ export function RoleLanding() {
   if (roles.includes("CASHIER")) {
     return <Navigate to="/cashier" replace />
   }
+  if (roles.includes("CHEF")) {
+    return <Navigate to="/kitchen" replace />
+  }
 
   // Token without a recognized role — nothing to show but the door.
   return (

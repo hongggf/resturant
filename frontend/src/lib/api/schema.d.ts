@@ -148,6 +148,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/kitchen/rounds/{id}/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["markReady_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/guest/cart/lines/{lineId}": {
         parameters: {
             query?: never;
@@ -564,6 +580,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/kitchen/rounds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getQueue_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/guest/orders": {
         parameters: {
             query?: never;
@@ -684,7 +716,7 @@ export interface components {
             /** Format: email */
             email: string;
             enabled: boolean;
-            roles: ("ADMIN" | "CASHIER")[];
+            roles: ("ADMIN" | "CASHIER" | "CHEF")[];
         };
         ApiResponseUserResponse: {
             success?: boolean;
@@ -699,7 +731,7 @@ export interface components {
             username?: string;
             email?: string;
             enabled?: boolean;
-            roles?: ("ADMIN" | "CASHIER")[];
+            roles?: ("ADMIN" | "CASHIER" | "CHEF")[];
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -867,6 +899,7 @@ export interface components {
             descriptionKm?: string;
             price: number;
             currencyCode: string;
+            imageUrl?: string;
             available?: boolean;
             /** Format: uuid */
             categoryId: string;
@@ -1118,6 +1151,7 @@ export interface components {
             descriptionKm?: string;
             price: number;
             currencyCode: string;
+            imageUrl?: string;
             available?: boolean;
             /** Format: uuid */
             categoryId: string;
@@ -1193,7 +1227,7 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
-            roles: ("ADMIN" | "CASHIER")[];
+            roles: ("ADMIN" | "CASHIER" | "CHEF")[];
         };
         LoginRequest: {
             username: string;
@@ -1795,6 +1829,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    markReady_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCashierRoundResponse"];
                 };
             };
         };
@@ -2630,6 +2686,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": string;
+                };
+            };
+        };
+    };
+    getQueue_1: {
+        parameters: {
+            query?: {
+                status?: "SENT" | "READY" | "COMPLETED" | "CANCELLED";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListCashierRoundResponse"];
                 };
             };
         };

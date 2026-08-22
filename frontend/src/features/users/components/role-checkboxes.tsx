@@ -4,6 +4,7 @@ import type { UserRole } from "../types"
 
 const ROLES: { value: UserRole; label: string; hint: string }[] = [
   { value: "CASHIER", label: "Cashier", hint: "Table board, orders, payments" },
+  { value: "CHEF", label: "Chef", hint: "Kitchen queue only" },
   { value: "ADMIN", label: "Admin", hint: "Full back-office access" },
 ]
 
