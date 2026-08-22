@@ -34,26 +34,37 @@ options() {
             nameKm: .value,
             unitPrice: ($p|tonumber),
             imageUrl: (
-              if (.value | test("Beef Ball|Tendon Ball"; "i")) then "/food-images/juicy-beef-balls.jpg"
-              elif (.value | test("Fish Ball|Roe"; "i")) then "/food-images/fish-roe-meatballs.jpg"
+              if (.value | test("Tendon Ball"; "i")) then "/food-images/beef-tendon-ball.jpg"
+              elif (.value | test("Beef Ball"; "i")) then "/food-images/juicy-beef-balls.jpg"
+              elif (.value | test("Fish Roe|Roe"; "i")) then "/food-images/fish-roe-meatballs.jpg"
+              elif (.value | test("Kaixin Fish Ball"; "i")) then "/food-images/kaixin-fish-ball.jpg"
+              elif (.value | test("Fish Ball"; "i")) then "/food-images/mini-fish-balls.jpg"
               elif (.value | test("Tender Chicken"; "i")) then "/food-images/tender-chicken.jpg"
               elif (.value | test("USA Beef"; "i")) then "/food-images/usa-beef.jpg"
               elif (.value | test("Prawn Dumplings"; "i")) then "/food-images/prawn-dumplings.jpg"
+              elif (.value | test("Mini Dumplings"; "i")) then "/food-images/mini-dumplings.jpg"
               elif (.value | test("Dumplings"; "i")) then "/food-images/sichuan-dumplings.jpg"
-              elif (.value | test("Rice"; "i")) then "/food-images/steamed-rice.jpg"
-              elif (.value | test("Apple"; "i")) then "/food-images/apple-tea.jpg"
+              elif (.value | test("Half Steamed Rice"; "i")) then "/food-images/half-steamed-rice.jpg"
+              elif (.value | test("Rice Noodles"; "i")) then "/food-images/rice-noodles.jpg"
+              elif (.value | test("Rice"; "i")) then "/food-images/full-steamed-rice.jpg"
               elif (.value | test("Pineapple"; "i")) then "/food-images/pineapple-tea.jpg"
+              elif (.value | test("Apple"; "i")) then "/food-images/apple-tea.jpg"
               elif (.value | test("Honey Lemon"; "i")) then "/food-images/honey-lemon.jpg"
               elif (.value | test("Deep Fried Tofu|Fried Tofu"; "i")) then "/food-images/fried-tofu.jpg"
               elif (.value | test("Soft Tofu"; "i")) then "/food-images/soft-tofu.jpg"
               elif (.value | test("Lotus Roots"; "i")) then "/food-images/lotus-roots.jpg"
-              elif (.value | test("Needle Mushroom|Crab Mushroom"; "i")) then "/food-images/needle-mushroom.jpg"
+              elif (.value | test("Crab Mushroom"; "i")) then "/food-images/crab-mushroom.jpg"
+              elif (.value | test("Needle Mushroom"; "i")) then "/food-images/needle-mushroom.jpg"
               elif (.value | test("Broccoli"; "i")) then "/food-images/broccoli.jpg"
-              elif (.value | test("Crab Stick|Crab Steak"; "i")) then "/food-images/crab-stick.jpg"
+              elif (.value | test("Crab Steak"; "i")) then "/food-images/crab-steak.jpg"
+              elif (.value | test("Crab Stick"; "i")) then "/food-images/crab-stick.jpg"
               elif (.value | test("Bacon"; "i")) then "/food-images/bacon.jpg"
-              elif (.value | test("Pork Flower Sausage|Hot Dog"; "i")) then "/food-images/flower-sausage.jpg"
+              elif (.value | test("Hot Dog"; "i")) then "/food-images/hot-dog.jpg"
+              elif (.value | test("Pork Flower Sausage"; "i")) then "/food-images/flower-sausage.jpg"
               elif (.value | test("Handmade Noodles"; "i")) then "/food-images/handmade-noodles.jpg"
-              elif (.value | test("Black Fungus|White Fungus"; "i")) then "/food-images/black-fungus.jpg"
+              elif (.value | test("White Fungus"; "i")) then "/food-images/white-fungus.jpg"
+              elif (.value | test("Black Fungus"; "i")) then "/food-images/black-fungus.jpg"
+              elif (.value | test("Fish Roll"; "i")) then "/food-images/fish-roll-meatball.jpg"
               elif (.value | test("Fish Cake"; "i")) then "/food-images/fish-cake.jpg"
               elif (.value | test("White Stomach"; "i")) then "/food-images/white-stomach.jpg"
               elif (.value | test("Duck Blood"; "i")) then "/food-images/duck-blood.jpg"
@@ -62,7 +73,6 @@ options() {
               elif (.value | test("Potato Noodles"; "i")) then "/food-images/potato-noodles.jpg"
               elif (.value | test("Dried Tofu Strips"; "i")) then "/food-images/dried-tofu-strips.jpg"
               elif (.value | test("Mee Chiet Noodles"; "i")) then "/food-images/mee-chiet-noodles.jpg"
-              elif (.value | test("Rice Noodles"; "i")) then "/food-images/rice-noodles.jpg"
               elif (.value | test("Tang-O|Chrysanthemum"; "i")) then "/food-images/chrysanthemum-greens.jpg"
               elif (.value | test("Romaine Lettuce"; "i")) then "/food-images/romaine-lettuce.jpg"
               else null end
@@ -136,11 +146,11 @@ CAT_COMBO=$(category "Combo Set" 6)
 
 echo "== Modifier groups =="
 FLAVOR_OPTS='[
-  {"nameEn":"Dry Malatang","nameKm":"Dry","unitPrice":0,"available":true,"sortOrder":1},
-  {"nameEn":"Sichuan Spicy Soup","nameKm":"Soup","unitPrice":0,"available":true,"sortOrder":2},
-  {"nameEn":"Milky Spicy Soup","nameKm":"Milk Soup","unitPrice":0,"available":true,"sortOrder":3},
-  {"nameEn":"Chicken Broth Soup","nameKm":"Chicken","unitPrice":0,"available":true,"sortOrder":4},
-  {"nameEn":"Mushroom Soup","nameKm":"Mushroom","unitPrice":0,"available":true,"sortOrder":5}
+  {"nameEn":"Dry Malatang","nameKm":"Dry","unitPrice":0,"imageUrl":"/food-images/dry-malatang.jpg","available":true,"sortOrder":1},
+  {"nameEn":"Sichuan Spicy Soup","nameKm":"Soup","unitPrice":0,"imageUrl":"/food-images/sichuan-spicy-soup.jpg","available":true,"sortOrder":2},
+  {"nameEn":"Milky Spicy Soup","nameKm":"Milk Soup","unitPrice":0,"imageUrl":"/food-images/milky-spicy-soup.jpg","available":true,"sortOrder":3},
+  {"nameEn":"Chicken Broth Soup","nameKm":"Chicken","unitPrice":0,"imageUrl":"/food-images/chicken-broth-soup.jpg","available":true,"sortOrder":4},
+  {"nameEn":"Mushroom Soup","nameKm":"Mushroom","unitPrice":0,"imageUrl":"/food-images/mushroom-soup.jpg","available":true,"sortOrder":5}
 ]'
 GRP_FLAVOR=$(modifier_group "Flavor" 1 1 "$FLAVOR_OPTS")
 
