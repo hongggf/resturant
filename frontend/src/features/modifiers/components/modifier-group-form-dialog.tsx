@@ -1,7 +1,8 @@
 import { useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
-import { useFieldArray, useForm } from "react-hook-form"
+import { useFieldArray, useForm, type FieldErrors } from "react-hook-form"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -70,6 +71,9 @@ function toRequest(values: ModifierGroupValues) {
     ...values,
     options: values.options.map((option, index) => ({
       ...option,
+      // The form accepts the null the API hands back; the request type doesn't.
+      imageUrl: option.imageUrl ?? undefined,
+      packSize: option.packSize ?? undefined,
       sortOrder: index,
     })),
   }
@@ -102,6 +106,14 @@ export function ModifierGroupFormDialog({
     }
   }
 
+  /* Not every field in the schema has an input rendering its error — an option's
+     imageUrl and packSize have none. Without this, such a failure just makes the
+     submit button look dead. */
+  function onInvalid(fieldErrors: FieldErrors<ModifierGroupValues>) {
+    toast.error("Couldn't save — check the highlighted fields.")
+    console.warn("Modifier group validation failed", fieldErrors)
+  }
+
   const { errors } = form.formState
 
   return (
@@ -117,7 +129,7 @@ export function ModifierGroupFormDialog({
               : "A reusable set of choices (sugar level, size, toppings) you can attach to menu items."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+        <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
           <FieldGroup>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field data-invalid={!!errors.nameEn}>

@@ -8,8 +8,10 @@ const optionSchema = z.object({
     .number("Price must be a number")
     .min(0, "Price can't be negative"),
   available: z.boolean(),
-  imageUrl: z.string().optional(),
-  packSize: z.string().optional(),
+  // The API returns null, not undefined, for an unset column — .optional()
+  // alone rejects null and fails validation on a field the form never renders.
+  imageUrl: z.string().nullish(),
+  packSize: z.string().nullish(),
 })
 
 export const modifierGroupSchema = z
