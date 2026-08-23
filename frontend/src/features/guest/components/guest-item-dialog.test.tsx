@@ -6,7 +6,9 @@ import type { GuestMenuItemDetail, MenuItem } from '../types'
 import type { GuestSessionState } from '../lib/session-store'
 
 const mockAddLineMutate = vi.fn()
+const mockUpdateLineMutate = vi.fn()
 let mockAddLinePending = false
+let mockUpdateLinePending = false
 let mockDetailPending = false
 let mockDetailError = false
 let mockDetailData: GuestMenuItemDetail | null = null
@@ -28,6 +30,10 @@ vi.mock('../hooks/use-guest-cart', () => ({
   useAddCartLine: () => ({
     mutate: mockAddLineMutate,
     isPending: mockAddLinePending,
+  }),
+  useUpdateCartLine: () => ({
+    mutate: mockUpdateLineMutate,
+    isPending: mockUpdateLinePending,
   }),
 }))
 

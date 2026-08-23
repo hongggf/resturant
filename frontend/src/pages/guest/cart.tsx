@@ -17,6 +17,7 @@ import { DualPrice } from "@/features/guest/components/dual-price"
 import { GuestCartLine } from "@/features/guest/components/guest-cart-line"
 import { useGuestCart, useSendCart } from "@/features/guest/hooks/use-guest-cart"
 import { useGuestSession } from "@/features/guest/hooks/use-guest-session"
+import { formatPercent, formatPrice } from "@/lib/format"
 
 export function GuestCartPage() {
   const navigate = useNavigate()
@@ -26,6 +27,8 @@ export function GuestCartPage() {
   const sendCart = useSendCart()
 
   const lines = cart?.lines ?? []
+  // Rate is a fraction off the API and may be absent; fall back to a bare label.
+  const vatLabel = cart?.vatRate != null ? `VAT (${formatPercent(cart.vatRate)})` : "VAT"
 
   return (
     <>
@@ -77,15 +80,30 @@ export function GuestCartPage() {
         <>
           <ul className="space-y-3">
             {lines.map((line) => (
-              <GuestCartLine key={line.id} line={line} disabled={spent} />
+              <GuestCartLine
+                key={line.id}
+                line={line}
+                disabled={spent}
+                currencyCode={cart?.currencyCode}
+              />
             ))}
           </ul>
 
           <Separator />
 
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Total</span>
-            <DualPrice usd={cart?.grandTotal} khr={cart?.grandTotalKhr} className="font-semibold" />
+          <div className="space-y-1 text-sm">
+            <div className="text-muted-foreground flex items-baseline justify-between">
+              <span>Subtotal</span>
+              <span className="tabular-nums">{formatPrice(cart?.subtotal)}</span>
+            </div>
+            <div className="text-muted-foreground flex items-baseline justify-between">
+              <span>{vatLabel}</span>
+              <span className="tabular-nums">{formatPrice(cart?.vatAmount)}</span>
+            </div>
+            <div className="flex items-baseline justify-between font-semibold">
+              <span>Total</span>
+              <DualPrice usd={cart?.grandTotal} khr={cart?.grandTotalKhr} />
+            </div>
           </div>
 
           <Button

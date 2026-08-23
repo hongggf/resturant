@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Minus, Plus } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -20,14 +21,14 @@ import { resolveItemImage } from "@/features/menu/lib/food-image"
 import { formatPrice } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useGuestMenuItemDetail } from "../hooks/use-guest-menu"
-import { useAddCartLine } from "../hooks/use-guest-cart"
+import { useAddCartLine, useUpdateCartLine } from "../hooks/use-guest-cart"
 import { useGuestSession } from "../hooks/use-guest-session"
 import {
   BUILD_MINIMUM,
   buildMinimumProgress,
   formatGroupList,
 } from "@/features/modifiers/lib/build-minimum"
-import type { MenuItem, ModifierOption } from "../types"
+import type { CartLine, MenuItem, ModifierOption } from "../types"
 
 interface Selection {
   option: ModifierOption
@@ -37,17 +38,45 @@ interface Selection {
 interface GuestItemDialogProps {
   item: MenuItem
   onOpenChange: (open: boolean) => void
+  /** Present when reopening an existing cart line: the dialog prefills from it
+   *  and saves back to that line instead of adding a second one. */
+  editLine?: CartLine
 }
 
-export function GuestItemDialog({ item, onOpenChange }: GuestItemDialogProps) {
+export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialogProps) {
   const { data, isPending, isError } = useGuestMenuItemDetail(item.id)
   const addLine = useAddCartLine()
+  const updateLine = useUpdateCartLine()
   const session = useGuestSession()
   const spent = session.status === "spent"
 
-  const [quantity, setQuantity] = useState(1)
-  const [remark, setRemark] = useState("")
+  const [quantity, setQuantity] = useState(editLine?.quantity ?? 1)
+  const [remark, setRemark] = useState(editLine?.remark ?? "")
   const [selected, setSelected] = useState<Record<string, Selection>>({})
+
+  /* A cart line stores option ids; the full options only arrive with the item
+     detail, so the prefill waits for that fetch. Runs once — after it, the
+     guest's edits own the state. */
+  const [prefilled, setPrefilled] = useState(!editLine)
+  useEffect(() => {
+    if (prefilled || !data) return
+    const byId = new Map<string, ModifierOption>()
+    for (const attached of data.modifierGroups ?? []) {
+      for (const option of attached.group?.options ?? []) {
+        if (option.id) byId.set(option.id, option)
+      }
+    }
+    const next: Record<string, Selection> = {}
+    for (const selection of editLine?.selections ?? []) {
+      const option = selection.modifierOptionId
+        ? byId.get(selection.modifierOptionId)
+        : undefined
+      // An option pulled from the menu since it was added just drops out.
+      if (option?.id) next[option.id] = { option, quantity: selection.quantity ?? 1 }
+    }
+    setSelected(next)
+    setPrefilled(true)
+  }, [data, editLine, prefilled])
 
   const groups = (data?.modifierGroups ?? [])
     .filter((attached) => attached.group?.active !== false)
@@ -114,20 +143,43 @@ export function GuestItemDialog({ item, onOpenChange }: GuestItemDialogProps) {
     (item.price ?? 0) +
     selections.reduce((sum, s) => sum + (s.option.unitPrice ?? 0) * s.quantity, 0)
 
+  const payloadSelections = () =>
+    selections.map((s) => ({ modifierOptionId: s.option.id!, quantity: s.quantity }))
+
   function handleAdd() {
     addLine.mutate(
       {
         menuItemId: item.id!,
         quantity,
         remark: remark.trim() || undefined,
-        selections: selections.map((s) => ({
-          modifierOptionId: s.option.id!,
-          quantity: s.quantity,
-        })),
+        selections: payloadSelections(),
       },
       { onSuccess: () => onOpenChange(false) }
     )
   }
+
+  function handleSave() {
+    updateLine.mutate(
+      {
+        lineId: editLine!.id!,
+        body: {
+          quantity,
+          remark: remark.trim() || undefined,
+          selections: payloadSelections(),
+        },
+      },
+      {
+        // The hook stays quiet because the +/- buttons share it; a full edit
+        // closes the dialog, so it needs its own confirmation.
+        onSuccess: () => {
+          toast.success("Cart updated")
+          onOpenChange(false)
+        },
+      }
+    )
+  }
+
+  const saving = editLine ? updateLine.isPending : addLine.isPending
 
   const heroImage = resolveItemImage(item.nameEn, item.imageUrl, "hero")
 
@@ -329,12 +381,14 @@ export function GuestItemDialog({ item, onOpenChange }: GuestItemDialogProps) {
               spent ||
               violations.length > 0 ||
               belowMinimum ||
-              addLine.isPending
+              saving
             }
-            onClick={handleAdd}
+            onClick={editLine ? handleSave : handleAdd}
           >
-            {addLine.isPending ? (
+            {saving ? (
               <Spinner />
+            ) : editLine ? (
+              `Save · ${formatPrice(unitPrice * quantity, item.currencyCode)}`
             ) : (
               `Add · ${formatPrice(unitPrice * quantity, item.currencyCode)}`
             )}

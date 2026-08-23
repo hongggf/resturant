@@ -26,6 +26,7 @@ describe('<GuestCartLine />', () => {
     menuItemId: 'item-1',
     nameEn: 'Spicy Beef Noodle',
     nameKm: 'មីសាច់គោហឹរ',
+    basePrice: 4.0,
     unitPrice: 6.5,
     quantity: 2,
     lineTotal: 13.0,
@@ -58,8 +59,64 @@ describe('<GuestCartLine />', () => {
     expect(screen.getByText('Spicy Beef Noodle')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
     expect(screen.getByText('$13.00')).toBeInTheDocument()
-    expect(screen.getByText('2× Boiled Egg · Cilantro')).toBeInTheDocument()
+    expect(screen.getByText('2× Boiled Egg')).toBeInTheDocument()
+    expect(screen.getByText('Cilantro')).toBeInTheDocument()
     expect(screen.getByText('“Extra spicy please”')).toBeInTheDocument()
+  })
+
+  it('prices each option row by its own extended total', () => {
+    render(<GuestCartLine line={baseLine} />)
+
+    expect(screen.getByText('$2.00')).toBeInTheDocument() // 2 × 1.00 egg
+    expect(screen.getByText('$0.50')).toBeInTheDocument() // 1 × 0.50 cilantro
+  })
+
+  it('offers an edit button on a built line', () => {
+    render(<GuestCartLine line={baseLine} />)
+
+    expect(screen.getByRole('button', { name: /edit line/i })).toBeInTheDocument()
+  })
+
+  it('omits the edit button on a line with nothing to configure', () => {
+    const drink: CartLine = {
+      id: 'line-3',
+      menuItemId: 'item-3',
+      nameEn: 'Coca-Cola Classic',
+      unitPrice: 1.0,
+      quantity: 1,
+      lineTotal: 1.0,
+    }
+
+    render(<GuestCartLine line={drink} />)
+
+    expect(screen.queryByRole('button', { name: /edit line/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /remove line/i })).toBeInTheDocument()
+  })
+
+  it('reconciles per-bowl option prices against the line total above quantity one', () => {
+    render(<GuestCartLine line={baseLine} />)
+
+    expect(screen.getByText('$6.50 each × 2')).toBeInTheDocument()
+  })
+
+  it('omits the reconciliation row at quantity one', () => {
+    render(<GuestCartLine line={{ ...baseLine, quantity: 1 }} />)
+
+    expect(screen.queryByText(/each ×/)).not.toBeInTheDocument()
+  })
+
+  it('labels a zero-priced option Free rather than $0.00', () => {
+    const freeOption: CartLine = {
+      ...baseLine,
+      selections: [
+        { modifierOptionId: 'mod-3', nameEn: 'Dry Malatang', unitPrice: 0, quantity: 1 },
+      ],
+    }
+
+    render(<GuestCartLine line={freeOption} />)
+
+    expect(screen.getByText('Free')).toBeInTheDocument()
+    expect(screen.queryByText('$0.00')).not.toBeInTheDocument()
   })
 
   it('renders correctly without selections and remarks', () => {
@@ -77,6 +134,8 @@ describe('<GuestCartLine />', () => {
     expect(screen.getByText('Steamed Rice')).toBeInTheDocument()
     expect(screen.getByText('$1.00')).toBeInTheDocument()
     expect(screen.queryByText(/“/)).not.toBeInTheDocument()
+    // With nothing stacked on top, a base row would just restate the total.
+    expect(screen.queryByText('Base price')).not.toBeInTheDocument()
   })
 
   it('calls updateLine when increasing quantity', async () => {
@@ -150,6 +209,7 @@ describe('<GuestCartLine />', () => {
     expect(screen.getByRole('button', { name: /decrease quantity/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /increase quantity/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /remove line/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /edit line/i })).toBeDisabled()
   })
 
   it('disables all action buttons when update or remove mutation is pending', () => {
