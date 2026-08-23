@@ -2,15 +2,15 @@ import type { AttachedModifierGroup, ModifierOption } from "../types"
 
 /**
  * A built bowl (DIY Malatang) has to carry at least this much of actual food
- * before a guest can add it to the cart. Picking a flavour alone costs nothing,
- * so without this a $0.01 bowl of plain broth would be orderable.
+ * before a guest can add it to the cart. The base is free and a flavour is a
+ * nominal cent, so without this a $0.01 bowl of plain broth would be orderable.
  */
 export const BUILD_MINIMUM = 3
 
 /**
  * Only these groups count toward the minimum, matched on group name. Flavour is
- * excluded because its options are free and required anyway; drinks and add-ons
- * are excluded because they are extras, not the meal.
+ * excluded because its options are nominal and required anyway; drinks are
+ * excluded because they are extras, not the meal.
  *
  * Today these groups are attached only to DIY Malatang, so the rule applies
  * there and nowhere else — matching on name rather than item id means a future

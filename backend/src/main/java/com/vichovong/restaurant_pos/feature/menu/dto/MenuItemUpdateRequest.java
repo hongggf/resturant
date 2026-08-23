@@ -2,7 +2,7 @@ package com.vichovong.restaurant_pos.feature.menu.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -13,7 +13,7 @@ public record MenuItemUpdateRequest(
         @NotBlank String nameKm,
         String descriptionEn,
         String descriptionKm,
-        @NotNull @Positive BigDecimal price,
+        @NotNull @PositiveOrZero BigDecimal price,
         @NotBlank String currencyCode,
         @Size(max = 500) String imageUrl,
         boolean available,

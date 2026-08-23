@@ -141,12 +141,14 @@ CAT_COMBO=$(category "Combo Set" 6)
 # --- 2. modifier groups ------------------------------------------------------
 
 echo "== Modifier groups =="
+# The bowl itself is $0.00 and the flavour carries the nominal cent, so a cart
+# line adds up from its options alone with no base-price row to explain.
 FLAVOR_OPTS='[
-  {"nameEn":"Dry Malatang","nameKm":"Dry","unitPrice":0,"imageUrl":"/food-images/dry-malatang.jpg","available":true,"sortOrder":1},
-  {"nameEn":"Sichuan Spicy Soup","nameKm":"Soup","unitPrice":0,"imageUrl":"/food-images/sichuan-spicy-soup.jpg","available":true,"sortOrder":2},
-  {"nameEn":"Milky Spicy Soup","nameKm":"Milk Soup","unitPrice":0,"imageUrl":"/food-images/milky-spicy-soup.jpg","available":true,"sortOrder":3},
-  {"nameEn":"Chicken Broth Soup","nameKm":"Chicken","unitPrice":0,"imageUrl":"/food-images/chicken-broth-soup.jpg","available":true,"sortOrder":4},
-  {"nameEn":"Mushroom Soup","nameKm":"Mushroom","unitPrice":0,"imageUrl":"/food-images/mushroom-soup.jpg","available":true,"sortOrder":5}
+  {"nameEn":"Dry Malatang","nameKm":"Dry","unitPrice":0.01,"imageUrl":"/food-images/dry-malatang.jpg","available":true,"sortOrder":1},
+  {"nameEn":"Sichuan Spicy Soup","nameKm":"Soup","unitPrice":0.01,"imageUrl":"/food-images/sichuan-spicy-soup.jpg","available":true,"sortOrder":2},
+  {"nameEn":"Milky Spicy Soup","nameKm":"Milk Soup","unitPrice":0.01,"imageUrl":"/food-images/milky-spicy-soup.jpg","available":true,"sortOrder":3},
+  {"nameEn":"Chicken Broth Soup","nameKm":"Chicken","unitPrice":0.01,"imageUrl":"/food-images/chicken-broth-soup.jpg","available":true,"sortOrder":4},
+  {"nameEn":"Mushroom Soup","nameKm":"Mushroom","unitPrice":0.01,"imageUrl":"/food-images/mushroom-soup.jpg","available":true,"sortOrder":5}
 ]'
 GRP_FLAVOR=$(modifier_group "Flavor" 1 1 "$FLAVOR_OPTS")
 
@@ -164,24 +166,20 @@ GRP_VEGGIE=$(modifier_group "Veggie" 0 10 "$(options 0.30 \
     "Deep Fried Tofu" "Dried Tofu Strips" "Needle Mushroom" "Crab Mushroom" \
     "Lotus Roots" "Tang-O" "Romaine Lettuce")")
 
+# Dumplings ride along in this group but are priced per portion, not per noodle.
 GRP_NOODLE=$(modifier_group "Noodles & Rice" 0 5 "$(options 0.70 \
-    "Mee Chiet Noodles" "Handmade Noodles" "Full Steamed Rice" "Rice Noodles")")
+    "Mee Chiet Noodles" "Handmade Noodles" "Full Steamed Rice" "Rice Noodles" \
+    "Sichuan Pork Dumplings (5pcs)" \
+    | jq 'map(if .nameEn | test("Sichuan Pork Dumplings") then .unitPrice = 1.50 else . end)')")
 
 GRP_EXTRA=$(modifier_group "Extra Love Add-Ons" 0 3 "$(options 1.58 \
     "Red Apple Jasmine Tea" "Pineapple Lemon Jasmine Tea" "Honey Lemon Kiss")")
 
-ADDON_OPTS='[
-  {"nameEn":"Full Steamed Rice","nameKm":"Full Steamed Rice","unitPrice":0.70,"available":true,"sortOrder":1},
-  {"nameEn":"Half Steamed Rice","nameKm":"Half Steamed Rice","unitPrice":0.35,"available":true,"sortOrder":2},
-  {"nameEn":"Sichuan Pork Dumplings (5pcs)","nameKm":"Sichuan Pork Dumplings (5pcs)","unitPrice":1.50,"available":true,"sortOrder":3}
-]'
-GRP_ADDON=$(modifier_group "Choice of Adds-On" 0 3 "$ADDON_OPTS")
-
 # --- 3. menu items -----------------------------------------------------------
 
 echo "== Menu items =="
-# NOTE: API requires price > 0, so DIY Malatang uses 0.01 instead of 0.
-ITEM_DIY=$(menu_item "DIY Malatang" 0.01 "$CAT_DIY" "Build your own Malatang" "diy-malatang.jpg")
+# Free base: a build is priced entirely by the options stacked on it.
+ITEM_DIY=$(menu_item "DIY Malatang" 0.00 "$CAT_DIY" "Build your own Malatang" "diy-malatang.jpg")
 menu_item "Kaixin World Football Set" 8.99 "$CAT_COMBO" "2 Signature Malatang + Dumplings + Drink" "combo-set.jpg" >/dev/null
 menu_item "Half Steamed Rice" 0.35 "$CAT_SIDE" "" "steamed-rice.jpg" >/dev/null
 menu_item "Full Steamed Rice" 0.70 "$CAT_SIDE" "" "steamed-rice.jpg" >/dev/null
@@ -199,7 +197,7 @@ menu_item "Big Heart Lollipop" 1.00 "$CAT_CANDY" "" "lollipop.jpg" >/dev/null
 
 echo "== Attach modifier groups to DIY Malatang =="
 i=0
-for grp in "$GRP_FLAVOR" "$GRP_MEAT" "$GRP_MEATBALL" "$GRP_VEGGIE" "$GRP_NOODLE" "$GRP_EXTRA" "$GRP_ADDON"; do
+for grp in "$GRP_FLAVOR" "$GRP_MEAT" "$GRP_MEATBALL" "$GRP_VEGGIE" "$GRP_NOODLE" "$GRP_EXTRA"; do
     post "/api/v1/menu-items/$ITEM_DIY/modifier-groups" \
         "$(jq -n --arg g "$grp" --argjson s "$i" '{modifierGroupId: $g, sortOrder: $s}')" >/dev/null
     echo "  ✓ attached  sortOrder=$i groupId=$grp"
