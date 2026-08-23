@@ -1,15 +1,46 @@
 name: Deploy to EC2
 
+# Deploys only after CI succeeds, rather than on every push. The name below
+# must match the `name:` in ci.yml exactly — GitHub matches on that string, so
+# renaming that workflow silently stops deployments.
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
     branches:
       - main
+  # Manual escape hatch: re-deploy without pushing, e.g. after fixing the
+  # server or if a deploy failed for reasons unrelated to the code.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never let two deploys build on the box at once.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # workflow_run fires on *completion*, whatever the outcome, so without this
+    # a failing CI run would still deploy. A manual dispatch has no triggering
+    # run and is allowed through.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
 
     steps:
+      - name: Report what triggered this deploy
+        run: |
+          echo "event:      ${{ github.event_name }}"
+          echo "CI run:     ${{ github.event.workflow_run.html_url }}"
+          echo "conclusion: ${{ github.event.workflow_run.conclusion }}"
+          echo "commit:     ${{ github.event.workflow_run.head_sha }}"
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.2
         with:
