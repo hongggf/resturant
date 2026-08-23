@@ -26,7 +26,7 @@ import {
   BUILD_MINIMUM,
   buildMinimumProgress,
   formatGroupList,
-} from "../lib/build-minimum"
+} from "@/features/modifiers/lib/build-minimum"
 import type { MenuItem, ModifierOption } from "../types"
 
 interface Selection {

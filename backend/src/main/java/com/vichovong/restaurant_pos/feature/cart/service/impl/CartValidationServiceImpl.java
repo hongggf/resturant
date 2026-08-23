@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,6 +59,7 @@ public class CartValidationServiceImpl implements CartValidationService {
 
         Set<UUID> seenOptionIds = new HashSet<>();
         Map<UUID, Integer> choicesPerGroup = new HashMap<>();
+        BigDecimal buildTotal = BigDecimal.ZERO;
         List<ModifierOption> resolved = new ArrayList<>(requested.size());
 
         for (CartSelectionRequest selection : requested) {
@@ -93,6 +95,10 @@ public class CartValidationServiceImpl implements CartValidationService {
             // meat is filled by 6 beef + 4 chicken just as much as by 10 different
             // meats. Counting selections instead let one option carry any quantity.
             choicesPerGroup.merge(group.getId(), selection.quantity(), Integer::sum);
+            if (BuildMinimumPolicy.counts(group)) {
+                buildTotal = buildTotal.add(option.getUnitPrice()
+                        .multiply(BigDecimal.valueOf(selection.quantity())));
+            }
             resolved.add(option);
         }
 
@@ -106,6 +112,15 @@ public class CartValidationServiceImpl implements CartValidationService {
                 throw new ApiException(HttpStatus.BAD_REQUEST,
                         "\"" + group.getNameEn() + "\" allows at most " + group.getMaxChoice() + " portion(s)");
             }
+        }
+
+        // A build has to carry real food, not just a free flavour. Only applies
+        // to items that actually have the build groups attached.
+        boolean isBuild = activeGroups.values().stream().anyMatch(BuildMinimumPolicy::counts);
+        if (isBuild && buildTotal.compareTo(BuildMinimumPolicy.MINIMUM) < 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Choose at least $" + BuildMinimumPolicy.MINIMUM.toPlainString()
+                            + " of meat, meatball, veggie, noodles or rice for this item");
         }
         return resolved;
     }

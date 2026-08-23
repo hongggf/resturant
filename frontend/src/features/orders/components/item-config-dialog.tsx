@@ -19,6 +19,11 @@ import { choiceRule } from "@/features/modifiers/lib/choice-rule"
 import type { ModifierOption } from "@/features/modifiers/types"
 import type { MenuItem } from "@/features/menu/types"
 import { resolveItemImage } from "@/features/menu/lib/food-image"
+import {
+  BUILD_MINIMUM,
+  buildMinimumProgress,
+  formatGroupList,
+} from "@/features/modifiers/lib/build-minimum"
 import { formatPrice } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useItemModifierGroups } from "../hooks/use-manual-order"
@@ -112,6 +117,11 @@ export function ItemConfigDialog({
     const max = attached.group?.maxChoice
     return count < min || (max != null && count > max)
   })
+
+  // Same floor the guest flow enforces, and the server rejects a line below
+  // it either way — so the till has to show it rather than fail on submit.
+  const minimum = buildMinimumProgress(groups, selected)
+  const belowMinimum = minimum.applies && minimum.shortfall > 0
 
   const selections: DraftSelection[] = Object.values(selected)
   const unitPrice =
@@ -289,6 +299,20 @@ export function ItemConfigDialog({
           </div>
         </div>
 
+        {belowMinimum && (
+          <p
+            role="status"
+            className="text-muted-foreground shrink-0 border-t px-6 pt-3 text-sm"
+          >
+            Add{" "}
+            <span className="text-foreground font-medium">
+              {formatPrice(minimum.shortfall, item.currencyCode)}
+            </span>{" "}
+            more from {formatGroupList(minimum.groupNames)} to reach the{" "}
+            {formatPrice(BUILD_MINIMUM, item.currencyCode)} minimum.
+          </p>
+        )}
+
         <Separator />
         <DialogFooter className="flex-row items-center sm:justify-between">
           <div className="flex items-center gap-1">
@@ -314,7 +338,9 @@ export function ItemConfigDialog({
             </Button>
           </div>
           <Button
-            disabled={isPending || isError || violations.length > 0}
+            disabled={
+              isPending || isError || violations.length > 0 || belowMinimum
+            }
             onClick={() => {
               onAdd({ item, quantity, remark: remark.trim(), selections })
               onOpenChange(false)
