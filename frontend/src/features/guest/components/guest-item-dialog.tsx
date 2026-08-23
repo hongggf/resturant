@@ -22,6 +22,11 @@ import { cn } from "@/lib/utils"
 import { useGuestMenuItemDetail } from "../hooks/use-guest-menu"
 import { useAddCartLine } from "../hooks/use-guest-cart"
 import { useGuestSession } from "../hooks/use-guest-session"
+import {
+  BUILD_MINIMUM,
+  buildMinimumProgress,
+  formatGroupList,
+} from "../lib/build-minimum"
 import type { MenuItem, ModifierOption } from "../types"
 
 interface Selection {
@@ -91,6 +96,11 @@ export function GuestItemDialog({ item, onOpenChange }: GuestItemDialogProps) {
     const max = attached.group?.maxChoice
     return count < min || (max != null && count > max)
   })
+
+  // A build has to carry at least BUILD_MINIMUM of meat/veg/noodles before it
+  // can be ordered; flavour alone is free.
+  const minimum = buildMinimumProgress(groups, selected)
+  const belowMinimum = minimum.applies && minimum.shortfall > 0
 
   const selections = Object.values(selected)
   const unitPrice =
@@ -260,6 +270,20 @@ export function GuestItemDialog({ item, onOpenChange }: GuestItemDialogProps) {
           </div>
         </div>
 
+        {belowMinimum && (
+          <p
+            role="status"
+            className="text-muted-foreground shrink-0 border-t px-6 pt-3 text-sm"
+          >
+            Add{" "}
+            <span className="text-foreground font-medium">
+              {formatPrice(minimum.shortfall, item.currencyCode)}
+            </span>{" "}
+            more from {formatGroupList(minimum.groupNames)} to reach the{" "}
+            {formatPrice(BUILD_MINIMUM, item.currencyCode)} minimum.
+          </p>
+        )}
+
         <Separator />
         <DialogFooter className="flex-row items-center sm:justify-between">
           <div className="flex items-center gap-1">
@@ -285,7 +309,14 @@ export function GuestItemDialog({ item, onOpenChange }: GuestItemDialogProps) {
             </Button>
           </div>
           <Button
-            disabled={isPending || isError || spent || violations.length > 0 || addLine.isPending}
+            disabled={
+              isPending ||
+              isError ||
+              spent ||
+              violations.length > 0 ||
+              belowMinimum ||
+              addLine.isPending
+            }
             onClick={handleAdd}
           >
             {addLine.isPending ? (
