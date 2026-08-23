@@ -53,8 +53,14 @@ export function ItemConfigDialog({
   }
 
   /** Distinct options picked in a group — what min/max rules count. */
-  function selectedCount(groupIndex: number) {
-    return groupOptions(groupIndex).filter((o) => o.id! in selected).length
+  /** Portions chosen in one group. maxChoice caps this, not the number of
+   *  options ticked, so 6 beef + 4 chicken fills a 10-portion Meat group.
+   *  Each group is counted on its own, so a full Meat never blocks Veggie. */
+  function portionCount(groupIndex: number) {
+    return groupOptions(groupIndex).reduce(
+      (sum, o) => sum + (selected[o.id!]?.quantity ?? 0),
+      0
+    )
   }
 
   function toggle(groupIndex: number, option: ModifierOption) {
@@ -100,7 +106,8 @@ export function ItemConfigDialog({
   }
 
   const violations = groups.filter((attached, index) => {
-    const count = selectedCount(index)
+    // Portions, to match what the server validates.
+    const count = portionCount(index)
     const min = attached.group?.minChoice ?? 0
     const max = attached.group?.maxChoice
     return count < min || (max != null && count > max)
@@ -152,13 +159,20 @@ export function ItemConfigDialog({
               const atMax =
                 !single &&
                 group.maxChoice != null &&
-                selectedCount(index) >= group.maxChoice
+                portionCount(index) >= group.maxChoice
               return (
                 <div key={group.id} className="space-y-2">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="text-sm font-medium">{group.nameEn}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {choiceRule(group.minChoice, group.maxChoice)}
+                    <p
+                      className={cn(
+                        "text-muted-foreground text-xs",
+                        atMax && "text-foreground font-medium"
+                      )}
+                    >
+                      {group.maxChoice != null && !single
+                        ? `${portionCount(index)}/${group.maxChoice}${atMax ? " · full" : ""}`
+                        : choiceRule(group.minChoice, group.maxChoice)}
                     </p>
                   </div>
                   <div className="grid gap-1.5">
@@ -235,7 +249,7 @@ export function ItemConfigDialog({
                             <Button
                               size="icon-xs"
                               variant="outline"
-                              disabled={qty === 0 && atMax}
+                              disabled={atMax}
                               onClick={() =>
                                 changeOptionQuantity(index, option, 1)
                               }

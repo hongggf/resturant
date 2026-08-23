@@ -150,21 +150,21 @@ FLAVOR_OPTS='[
 ]'
 GRP_FLAVOR=$(modifier_group "Flavor" 1 1 "$FLAVOR_OPTS")
 
-GRP_MEAT=$(modifier_group "Meat" 0 20 "$(options 0.90 \
+GRP_MEAT=$(modifier_group "Meat" 0 10 "$(options 0.90 \
     "Tender Chicken" "USA Beef" "Black Chicken" "White Stomach")")
 
-GRP_MEATBALL=$(modifier_group "Meat Ball" 0 30 "$(options 0.30 \
+GRP_MEATBALL=$(modifier_group "Meat Ball" 0 15 "$(options 0.30 \
     "Juicy Beef Ball (2pcs)" "Mini Juicy Fish Ball" "Fish Roe Meatball" "Mini Dumplings" \
     "Crab Stick" "Duck Blood" "Potato Noodles" \
     "Bacon (4pcs)" "Kaixin Dumplings" \
     "Pork Flower Sausage" "Fish Cake" "Prawn Dumplings" "Fish Roll Meatball")")
 
-GRP_VEGGIE=$(modifier_group "Veggie" 0 30 "$(options 0.30 \
+GRP_VEGGIE=$(modifier_group "Veggie" 0 10 "$(options 0.30 \
     "Broccoli" "White Fungus" "Black Fungus" "Soft Tofu" "Bamboo Shoot" \
     "Deep Fried Tofu" "Dried Tofu Strips" "Needle Mushroom" "Crab Mushroom" \
     "Lotus Roots" "Tang-O" "Romaine Lettuce")")
 
-GRP_NOODLE=$(modifier_group "Noodles & Rice" 0 4 "$(options 0.70 \
+GRP_NOODLE=$(modifier_group "Noodles & Rice" 0 5 "$(options 0.70 \
     "Mee Chiet Noodles" "Handmade Noodles" "Full Steamed Rice" "Rice Noodles")")
 
 GRP_EXTRA=$(modifier_group "Extra Love Add-Ons" 0 3 "$(options 1.58 \

@@ -89,7 +89,10 @@ public class CartValidationServiceImpl implements CartValidationService {
                 throw new ApiException(HttpStatus.BAD_REQUEST,
                         "\"" + group.getNameEn() + "\" is single-choice and only allows quantity 1");
             }
-            choicesPerGroup.merge(group.getId(), 1, Integer::sum);
+            // Count portions, not ticked options: a bowl that holds 10 pieces of
+            // meat is filled by 6 beef + 4 chicken just as much as by 10 different
+            // meats. Counting selections instead let one option carry any quantity.
+            choicesPerGroup.merge(group.getId(), selection.quantity(), Integer::sum);
             resolved.add(option);
         }
 
@@ -97,11 +100,11 @@ public class CartValidationServiceImpl implements CartValidationService {
             int chosen = choicesPerGroup.getOrDefault(group.getId(), 0);
             if (chosen < group.getMinChoice()) {
                 throw new ApiException(HttpStatus.BAD_REQUEST,
-                        "\"" + group.getNameEn() + "\" requires at least " + group.getMinChoice() + " choice(s)");
+                        "\"" + group.getNameEn() + "\" requires at least " + group.getMinChoice() + " portion(s)");
             }
             if (group.getMaxChoice() != null && chosen > group.getMaxChoice()) {
                 throw new ApiException(HttpStatus.BAD_REQUEST,
-                        "\"" + group.getNameEn() + "\" allows at most " + group.getMaxChoice() + " choice(s)");
+                        "\"" + group.getNameEn() + "\" allows at most " + group.getMaxChoice() + " portion(s)");
             }
         }
         return resolved;
