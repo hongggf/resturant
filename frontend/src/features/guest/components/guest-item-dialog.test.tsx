@@ -8,7 +8,7 @@ import type { GuestSessionState } from '../lib/session-store'
 const mockAddLineMutate = vi.fn()
 const mockUpdateLineMutate = vi.fn()
 let mockAddLinePending = false
-let mockUpdateLinePending = false
+const mockUpdateLinePending = false
 let mockDetailPending = false
 let mockDetailError = false
 let mockDetailData: GuestMenuItemDetail | null = null
