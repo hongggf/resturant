@@ -33,7 +33,7 @@ export function SessionPage() {
   const navigate = useNavigate()
   const location = useLocation() as { state?: { tableNumber?: string } }
 
-  const { data, isPending, isError, error, refetch } =
+  const { data, isPending, isLoadingError, isRefetchError, error, refetch } =
     useSessionRounds(sessionId)
   const markReady = useMarkRoundReady(sessionId)
   const cancelRound = useCancelRound(sessionId)
@@ -104,13 +104,20 @@ export function SessionPage() {
         </div>
       </div>
 
+            {isRefetchError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Connection lost</AlertTitle>
+          <AlertDescription>Reconnecting to the server...</AlertDescription>
+        </Alert>
+      )}
+
       {isPending ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }, (_, i) => (
             <Skeleton key={i} className="h-32 w-full rounded-xl" />
           ))}
         </div>
-      ) : !data && isError ? (
+      ) : isLoadingError ? (
         <Alert variant="destructive">
           <AlertTitle>Couldn&apos;t load this session</AlertTitle>
           <AlertDescription>

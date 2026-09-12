@@ -76,7 +76,7 @@ export function KitchenTicket({
   return (
     <Card
       className={cn(
-        "gap-3 py-4",
+        "gap-3 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500",
         warn && "border-amber-500",
         urgent && "border-destructive border-2"
       )}

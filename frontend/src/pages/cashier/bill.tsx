@@ -20,7 +20,7 @@ export function BillPage() {
   const navigate = useNavigate()
   const location = useLocation() as { state?: { tableNumber?: string } }
 
-  const { data: bill, isPending, isError, error, refetch } = useBill(sessionId)
+  const { data: bill, isPending, isLoadingError, isRefetchError, error, refetch } = useBill(sessionId)
   const tableNumber = bill?.tableNumber ?? location.state?.tableNumber
   const isOffline = useIsOffline()
 
@@ -53,12 +53,19 @@ export function BillPage() {
         </div>
       </div>
 
+            {isRefetchError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Connection lost</AlertTitle>
+          <AlertDescription>Reconnecting to the server...</AlertDescription>
+        </Alert>
+      )}
+
       {isPending ? (
         <div className="grid gap-4 lg:grid-cols-2">
           <Skeleton className="h-72 rounded-xl" />
           <Skeleton className="h-72 rounded-xl" />
         </div>
-      ) : !bill && isError ? (
+      ) : isLoadingError ? (
         <Alert variant="destructive">
           <AlertTitle>Couldn&apos;t load the bill</AlertTitle>
           <AlertDescription>

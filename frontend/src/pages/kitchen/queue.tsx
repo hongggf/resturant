@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { CookingPot } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -31,6 +31,30 @@ const CLOCK_TICK_MS = 30_000
 // immediately on the action that matters.
 const READY_REFETCH_MS = 20_000
 
+let audioCtx: AudioContext | null = null
+
+function playBeep() {
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume()
+    }
+    const osc = audioCtx.createOscillator()
+    const gain = audioCtx.createGain()
+    osc.connect(gain)
+    gain.connect(audioCtx.destination)
+    osc.type = "sine"
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime)
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime)
+    osc.start()
+    osc.stop(audioCtx.currentTime + 0.2)
+  } catch (e) {
+    // ignore
+  }
+}
+
 function useNow() {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -42,7 +66,7 @@ function useNow() {
 
 export function KitchenQueuePage() {
   const now = useNow()
-  const { data, isPending, isError, error, refetch } = useKitchenQueue("SENT")
+  const { data, isPending, isLoadingError, isRefetchError, error, refetch } = useKitchenQueue("SENT")
   const { data: ready } = useKitchenQueue("READY", READY_REFETCH_MS)
   const markReady = useMarkKitchenRoundReady()
 
@@ -52,6 +76,25 @@ export function KitchenQueuePage() {
     (max, round) => Math.max(max, minutesWaiting(round.sentAt, now)),
     0
   )
+
+  const seenIds = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (!data) return
+    let hasNew = false
+    const currentIds = new Set<string>()
+    for (const r of data) {
+      if (r.id) {
+        currentIds.add(r.id)
+        if (!seenIds.current.has(r.id)) {
+          hasNew = true
+        }
+      }
+    }
+    if (hasNew && seenIds.current.size > 0) {
+      playBeep()
+    }
+    seenIds.current = currentIds
+  }, [data])
 
   function handleMarkReady(round: CashierRound) {
     if (round.id) markReady.mutate(round.id)
@@ -75,13 +118,20 @@ export function KitchenQueuePage() {
         )}
       </div>
 
+            {isRefetchError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Connection lost</AlertTitle>
+          <AlertDescription>Reconnecting to the server...</AlertDescription>
+        </Alert>
+      )}
+
       {isPending ? (
         <div className={gridClass}>
           {Array.from({ length: 4 }, (_, i) => (
             <Skeleton key={i} className="h-64 rounded-xl" />
           ))}
         </div>
-      ) : isError ? (
+      ) : isLoadingError ? (
         <Alert variant="destructive">
           <AlertTitle>Couldn&apos;t load the cook queue</AlertTitle>
           <AlertDescription>

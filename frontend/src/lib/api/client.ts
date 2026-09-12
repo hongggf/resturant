@@ -1,4 +1,4 @@
-import { getToken } from "@/lib/auth/token"
+import { clearToken, getToken } from "@/lib/auth/token"
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? ""
 
@@ -51,6 +51,12 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok || !envelope?.success) {
+    if (response.status === 401) {
+      clearToken()
+      window.location.href = `/login?from=${encodeURIComponent(
+        window.location.pathname + window.location.search
+      )}`
+    }
     throw new ApiError(
       envelope?.message ?? `Request failed (${response.status})`,
       response.status
