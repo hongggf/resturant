@@ -1,4 +1,5 @@
-import { CheckCheck } from "lucide-react"
+import { CheckCheck, Ban } from "lucide-react"
+import { useUpdateMenuItemAvailability } from "@/features/menu/hooks/use-menu-items"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
@@ -12,20 +13,35 @@ import {
 } from "../lib/ticket-age"
 
 function TicketLine({ line }: { line: RoundLine }) {
+  const updateAvailability = useUpdateMenuItemAvailability()
   // A voided line is still shown, struck through: the chef may already have
   // started it, and silently dropping it off the ticket hides that change.
   return (
-    <li className={cn(line.voided && "opacity-60")}>
-      <div className="flex items-baseline gap-2">
-        <span className="text-lg font-bold tabular-nums">{line.quantity}×</span>
-        <span
-          className={cn(
-            "text-lg leading-tight font-semibold",
-            line.voided && "line-through"
-          )}
-        >
-          {line.nameEn}
-        </span>
+    <li className={cn(line.voided && "opacity-60", "group relative")}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-baseline gap-2">
+          <span className="text-lg font-bold tabular-nums">{line.quantity}×</span>
+          <span
+            className={cn(
+              "text-lg leading-tight font-semibold",
+              line.voided && "line-through"
+            )}
+          >
+            {line.nameEn}
+          </span>
+        </div>
+        {!line.voided && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+            onClick={() => updateAvailability.mutate({ id: line.menuItemId, available: false })}
+            disabled={updateAvailability.isPending}
+          >
+            <Ban className="size-3 mr-1" />
+            86 / Sold out
+          </Button>
+        )}
       </div>
       {line.nameKm && (
         <p className="text-muted-foreground pl-8 text-sm">{line.nameKm}</p>

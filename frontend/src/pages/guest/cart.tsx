@@ -116,7 +116,7 @@ export function GuestCartPage() {
             }
           >
             {sendCart.isPending && <Spinner />}
-            {sendCart.isPending ? "Sending…" : "Send order"}
+            {sendCart.isPending ? "Sending…" : "Send to kitchen"}
           </Button>
         </>
       )}

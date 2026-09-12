@@ -83,6 +83,14 @@ public class MenuItemServiceImpl implements MenuItemService {
 
     @Override
     @Transactional
+    public MenuItemResponse updateAvailability(UUID id, boolean available) {
+        MenuItem menuItem = findMenuItem(id);
+        menuItem.setAvailable(available);
+        return menuItemMapper.toResponse(menuItem);
+    }
+
+    @Override
+    @Transactional
     public void delete(UUID id) {
         if (menuItemModifierGroupRepository.existsByMenuItemId(id)) {
             throw new ApiException(HttpStatus.CONFLICT,

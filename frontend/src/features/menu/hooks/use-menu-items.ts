@@ -108,3 +108,19 @@ export function useDeleteMenuItem() {
     onError: (error: ApiError) => toast.error(error.message),
   })
 }
+
+export function useUpdateMenuItemAvailability() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, available }: { id: string; available: boolean }) => {
+      // NOTE: Import updateMenuItemAvailability manually or it might fail if we don't fix imports
+      const { updateMenuItemAvailability } = await import("../api/menu-items")
+      return updateMenuItemAvailability(id, available)
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["menu-items"] })
+      toast.success(`Menu item "${data.nameEn}" marked as ${data.available ? "available" : "sold out"}`)
+    },
+    onError: (error: ApiError) => toast.error(error.message),
+  })
+}

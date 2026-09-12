@@ -27,7 +27,7 @@ export function GuestOrdersPage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Your orders</h1>
+        <h1 className="text-lg font-semibold">Your ordered items</h1>
         <Button variant="outline" size="sm" asChild>
           <Link to="/guest/menu">Menu</Link>
         </Button>
@@ -64,9 +64,9 @@ export function GuestOrdersPage() {
             <EmptyMedia variant="icon">
               <ReceiptText />
             </EmptyMedia>
-            <EmptyTitle>No orders yet</EmptyTitle>
+            <EmptyTitle>Nothing ordered yet</EmptyTitle>
             <EmptyDescription>
-              Rounds you send from the cart will show up here.
+              Items you send to the kitchen will appear here.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

@@ -60,3 +60,9 @@ export function uploadMenuItemImage(id: string, file: File) {
 export function listCurrencies() {
   return apiFetch<Currency[]>("/currencies")
 }
+
+export function updateMenuItemAvailability(id: string, available: boolean) {
+  return apiFetch<MenuItem>(`/menu-items/${id}/availability?available=${available}`, {
+    method: "PATCH",
+  })
+}

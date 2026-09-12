@@ -46,6 +46,7 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
         <Badge
           asChild
           variant={categoryId === undefined ? "default" : "outline"}
+          className="h-8 px-4 text-sm"
         >
           <button type="button" onClick={() => pickCategory(undefined)}>
             All
@@ -56,6 +57,7 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
             key={category.id}
             asChild
             variant={categoryId === category.id ? "default" : "outline"}
+            className="h-8 px-4 text-sm"
           >
             <button type="button" onClick={() => pickCategory(category.id)}>
               {category.nameEn}
@@ -63,6 +65,8 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
           </Badge>
         ))}
       </div>
+
+      <div className="text-muted-foreground text-right text-xs">Prices shown before VAT</div>
 
       {isPending ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -106,9 +110,11 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
                 key={item.id}
                 type="button"
                 onClick={() => onPick(item)}
+                disabled={!item.available}
                 className={cn(
-                  "bg-card hover:border-primary/50 flex flex-col overflow-hidden rounded-xl border text-left",
-                  "transition-colors"
+                  "bg-card hover:border-primary/50 flex flex-col overflow-hidden rounded-xl border text-left relative",
+                  "transition-colors",
+                  !item.available && "opacity-50 cursor-not-allowed"
                 )}
               >
                 <div className="bg-muted relative aspect-[4/3] w-full">
@@ -122,6 +128,11 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
                   ) : (
                     <div className="text-muted-foreground/50 flex size-full items-center justify-center">
                       <ImageOff className="size-6" />
+                    </div>
+                  )}
+                  {!item.available && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-[1px]">
+                      <Badge variant="destructive" className="font-semibold pointer-events-none">Sold out / អស់</Badge>
                     </div>
                   )}
                 </div>

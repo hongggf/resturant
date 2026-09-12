@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, ImageOff, UtensilsCrossed } from "lucide-react"
+import { ChevronLeft, ChevronRight, ImageOff, UtensilsCrossed, Ban } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   useCategoryOptions,
   useMenuItems,
+  useUpdateMenuItemAvailability,
 } from "@/features/menu/hooks/use-menu-items"
 import { resolveItemImage } from "@/features/menu/lib/food-image"
 import type { MenuItem } from "@/features/menu/types"
@@ -33,8 +34,8 @@ export function MenuBrowser({ onPick }: MenuBrowserProps) {
   const { data, isPending, isError, error, refetch } = useMenuItems({
     page,
     categoryId,
-    available: true,
   })
+  const updateAvailability = useUpdateMenuItemAvailability()
 
   const items = data?.content ?? []
   const totalPages = data?.totalPages ?? 0
@@ -50,6 +51,7 @@ export function MenuBrowser({ onPick }: MenuBrowserProps) {
         <Badge
           asChild
           variant={categoryId === undefined ? "default" : "outline"}
+          className="h-8 px-4 text-sm"
         >
           <button type="button" onClick={() => pickCategory(undefined)}>
             All
@@ -60,6 +62,7 @@ export function MenuBrowser({ onPick }: MenuBrowserProps) {
             key={category.id}
             asChild
             variant={categoryId === category.id ? "default" : "outline"}
+            className="h-8 px-4 text-sm"
           >
             <button type="button" onClick={() => pickCategory(category.id)}>
               {category.nameEn}
@@ -106,16 +109,23 @@ export function MenuBrowser({ onPick }: MenuBrowserProps) {
           {items.map((item) => {
             const image = resolveItemImage(item.nameEn, item.imageUrl, "card")
             return (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                onClick={() => onPick(item)}
                 className={cn(
-                  "bg-card hover:border-primary/50 flex flex-col overflow-hidden rounded-xl border text-left",
-                  "transition-colors"
+                  "bg-card hover:border-primary/50 flex flex-col overflow-hidden rounded-xl border text-left relative",
+                  "transition-colors",
+                  !item.available && "opacity-50 cursor-not-allowed"
                 )}
               >
-                <div className="bg-muted relative aspect-[4/3] w-full">
+                <button
+                  type="button"
+                  onClick={() => onPick(item)}
+                  disabled={!item.available}
+                  className="absolute inset-0 z-0 text-left"
+                >
+                  <span className="sr-only">Select {item.nameEn}</span>
+                </button>
+                <div className="bg-muted relative aspect-[4/3] w-full pointer-events-none">
                   {image ? (
                     <img
                       src={image}
@@ -128,8 +138,13 @@ export function MenuBrowser({ onPick }: MenuBrowserProps) {
                       <ImageOff className="size-6" />
                     </div>
                   )}
+                  {!item.available && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-[1px]">
+                      <Badge variant="destructive" className="font-semibold pointer-events-none">Sold out / អស់</Badge>
+                    </div>
+                  )}
                 </div>
-                <div className="flex flex-1 flex-col gap-0.5 p-2">
+                <div className="flex flex-1 flex-col gap-0.5 p-2 pointer-events-none">
                   <span className="line-clamp-2 text-sm font-medium">
                     {item.nameEn}
                   </span>
@@ -137,7 +152,19 @@ export function MenuBrowser({ onPick }: MenuBrowserProps) {
                     {formatPrice(item.price, item.currencyCode)}
                   </span>
                 </div>
-              </button>
+                {item.available && (
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute top-2 right-2 size-8 shadow-md z-10 text-destructive bg-background/80 hover:bg-background/90"
+                    onClick={() => updateAvailability.mutate({ id: item.id, available: false })}
+                    disabled={updateAvailability.isPending}
+                    title="86 / Sold out"
+                  >
+                    <Ban className="size-4" />
+                  </Button>
+                )}
+              </div>
             )
           })}
         </div>

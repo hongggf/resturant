@@ -47,7 +47,7 @@ public class GuestMenuController {
             @RequestParam(required = false) UUID categoryId,
             @PageableDefault(size = 50, sort = "nameEn") Pageable pageable) {
         return ResponseEntity.ok(
-                ApiResponse.success(menuItemService.getAll(pageable, categoryId, true)));
+                ApiResponse.success(menuItemService.getAll(pageable, categoryId, null)));
     }
 
     @GetMapping("/items/{id}")

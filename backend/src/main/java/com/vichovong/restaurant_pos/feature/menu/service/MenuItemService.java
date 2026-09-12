@@ -19,6 +19,8 @@ public interface MenuItemService {
 
     MenuItemResponse update(UUID id, MenuItemUpdateRequest request);
 
+    MenuItemResponse updateAvailability(UUID id, boolean available);
+
     void delete(UUID id);
 
     MenuItemResponse uploadImage(UUID id, MultipartFile file);
