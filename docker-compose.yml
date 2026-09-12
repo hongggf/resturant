@@ -46,9 +46,14 @@ services:
       - backend
     ports:
       - "80:80"
-      - "443:443"
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: restaurant-pos-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
 
 volumes:
   pgdata:
