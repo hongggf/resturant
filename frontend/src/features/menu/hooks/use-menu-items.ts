@@ -14,7 +14,6 @@ import {
   listCurrencies,
   listMenuItems,
   updateMenuItem,
-  uploadMenuItemImage,
   type MenuItemListParams,
 } from "../api/menu-items"
 import type { MenuItemCreateRequest, MenuItemUpdateRequest } from "../types"

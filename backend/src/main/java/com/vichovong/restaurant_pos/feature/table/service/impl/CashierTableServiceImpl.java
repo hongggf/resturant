@@ -63,8 +63,6 @@ public class CashierTableServiceImpl implements CashierTableService {
     }
 
     @Override
-
-    @Override
     @Transactional
     public void transferSession(UUID sessionId, UUID targetTableId) {
         TableSession session = tableSessionRepository.findById(sessionId)

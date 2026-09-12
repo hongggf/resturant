@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { api } from "@/lib/api/client"
+import { apiFetch } from "@/lib/api/client"
 
 export function useTransferSession() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ sessionId, targetTableId }: { sessionId: string; targetTableId: string }) => {
-      await api.patch(\`/sessions/\${sessionId}/transfer\`, { targetTableId })
+      await apiFetch(`/sessions/${sessionId}/transfer`, { method: "PATCH", body: JSON.stringify({ targetTableId }) })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tables", "overview"] })

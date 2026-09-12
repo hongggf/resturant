@@ -83,9 +83,9 @@ export function MenuItemFormDialog({
   function onSubmit(values: MenuItemValues) {
     const done = { onSuccess: () => onOpenChange(false) }
     if (item?.id) {
-      update.mutate({ id: item.id, body: values, image: imageFile }, done)
+      update.mutate({ id: item.id, body: { ...values, imageUrl: values.imageUrl ?? undefined }, image: imageFile }, done)
     } else {
-      create.mutate({ body: values, image: imageFile }, done)
+      create.mutate({ body: { ...values, imageUrl: values.imageUrl ?? undefined }, image: imageFile }, done)
     }
   }
 

@@ -157,7 +157,7 @@ export function MenuBrowser({ onPick }: MenuBrowserProps) {
                     variant="secondary"
                     size="icon"
                     className="absolute top-2 right-2 size-8 shadow-md z-10 text-destructive bg-background/80 hover:bg-background/90"
-                    onClick={() => updateAvailability.mutate({ id: item.id, available: false })}
+                    onClick={() => updateAvailability.mutate({ id: item.id!, available: false })}
                     disabled={updateAvailability.isPending}
                     title="86 / Sold out"
                   >

@@ -30,7 +30,7 @@ function PromoFormDialog({ open, onOpenChange, promo }: { open: boolean, onOpenC
   const [description, setDescription] = useState(promo?.description ?? "")
   const [active, setActive] = useState(promo?.active ?? false)
   const [imageFile, setImageFile] = useState<File | undefined>()
-  const [imageUrl, setImageUrl] = useState(promo?.imageUrl ?? "")
+  const [imageUrl] = useState(promo?.imageUrl ?? "")
 
   const create = useCreatePromo()
   const update = useUpdatePromo()

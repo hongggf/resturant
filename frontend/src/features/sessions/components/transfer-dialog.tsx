@@ -62,7 +62,7 @@ export function TransferDialog({
               <Button
                 key={t.tableId}
                 variant={selectedTableId === t.tableId ? "default" : "outline"}
-                onClick={() => setSelectedTableId(t.tableId)}
+                onClick={() => setSelectedTableId(t.tableId ?? null)}
               >
                 {t.tableNumber}
               </Button>

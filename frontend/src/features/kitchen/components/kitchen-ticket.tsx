@@ -35,7 +35,7 @@ function TicketLine({ line }: { line: RoundLine }) {
             variant="outline"
             size="sm"
             className="h-7 px-2 text-xs text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-            onClick={() => updateAvailability.mutate({ id: line.menuItemId, available: false })}
+            onClick={() => updateAvailability.mutate({ id: line.menuItemId!, available: false })}
             disabled={updateAvailability.isPending}
           >
             <Ban className="size-3 mr-1" />
