@@ -14,4 +14,6 @@ public interface CashierTableService {
 
     /** Find-or-create the ACTIVE session — the guest QR-scan logic minus the guest token. */
     StaffSessionResponse openSession(UUID tableId);
+
+    void transferSession(UUID sessionId, UUID targetTableId);
 }

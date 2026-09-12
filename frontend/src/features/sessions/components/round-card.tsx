@@ -8,6 +8,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { Spinner } from "@/components/ui/spinner"
@@ -171,6 +174,7 @@ interface RoundCardProps {
   onMarkReady: (round: CashierRound) => void
   onCancel: (round: CashierRound) => void
   onEditLine: (round: CashierRound, line: RoundLine) => void
+  onVoidLine: (round: CashierRound, line: RoundLine) => void
 }
 
 export function RoundCard({
@@ -179,6 +183,7 @@ export function RoundCard({
   onMarkReady,
   onCancel,
   onEditLine,
+  onVoidLine,
 }: RoundCardProps) {
   const status: RoundStatus = round.status ?? "SENT"
   const open = status === "SENT" || status === "READY"
@@ -242,14 +247,27 @@ export function RoundCard({
                   <TooltipContent>No editable items in this round</TooltipContent>
                 </Tooltip>
               ) : editableLines.length === 1 ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onEditLine(round, editableLines[0])}
-                >
-                  <Pencil />
-                  Edit
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <Pencil />
+                      Edit
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => onEditLine(round, editableLines[0])}
+                    >
+                      Change options...
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => onVoidLine(round, editableLines[0])}
+                    >
+                      Void item...
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -260,12 +278,24 @@ export function RoundCard({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {editableLines.map((line) => (
-                      <DropdownMenuItem
-                        key={line.id}
-                        onClick={() => onEditLine(round, line)}
-                      >
-                        {line.quantity}× {line.nameEn}
-                      </DropdownMenuItem>
+                      <DropdownMenuSub key={line.id}>
+                        <DropdownMenuSubTrigger>
+                          {line.quantity}× {line.nameEn}
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          <DropdownMenuItem
+                            onClick={() => onEditLine(round, line)}
+                          >
+                            Change options...
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => onVoidLine(round, line)}
+                          >
+                            Void item...
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>

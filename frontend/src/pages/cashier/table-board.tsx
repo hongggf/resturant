@@ -1,4 +1,4 @@
-import { LayoutGrid } from "lucide-react"
+import { LayoutGrid, WifiOff } from "lucide-react"
 import { useNavigate } from "react-router"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -16,6 +16,7 @@ import {
   useOpenSession,
   useTablesOverview,
 } from "@/features/sessions/hooks/use-tables-overview"
+import { useIsOffline } from "@/hooks/use-offline"
 import type { TableOverview } from "@/features/sessions/types"
 
 const gridClass =
@@ -25,6 +26,7 @@ export function TableBoardPage() {
   const navigate = useNavigate()
   const { data, isPending, isError, error, refetch } = useTablesOverview()
   const openSession = useOpenSession()
+  const isOffline = useIsOffline()
 
   const tables = data ?? []
   const occupied = tables.filter((t) => t.state !== "IDLE").length
@@ -50,6 +52,17 @@ export function TableBoardPage() {
 
   return (
     <>
+
+      {isOffline && (
+        <Alert variant="destructive" className="mb-4 bg-destructive/10">
+          <WifiOff className="size-4" />
+          <AlertTitle>You are offline</AlertTitle>
+          <AlertDescription>
+            Showing cached data. New orders or updates may fail to save.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Tables</h1>
@@ -72,7 +85,7 @@ export function TableBoardPage() {
             <Skeleton key={i} className="aspect-square rounded-xl" />
           ))}
         </div>
-      ) : isError ? (
+      ) : !data && isError ? (
         <Alert variant="destructive">
           <AlertTitle>Couldn&apos;t load the table board</AlertTitle>
           <AlertDescription>

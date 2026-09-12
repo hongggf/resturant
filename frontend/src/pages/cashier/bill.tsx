@@ -1,4 +1,4 @@
-import { ArrowLeft, ReceiptText } from "lucide-react"
+import { ArrowLeft, ReceiptText, WifiOff } from "lucide-react"
 import { Link, useLocation, useNavigate, useParams } from "react-router"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { BillSummary } from "@/features/payments/components/bill-summary"
 import { PaymentPanel } from "@/features/payments/components/payment-panel"
 import { useBill } from "@/features/payments/hooks/use-payment"
+import { useIsOffline } from "@/hooks/use-offline"
 
 export function BillPage() {
   const { sessionId = "" } = useParams()
@@ -21,9 +22,21 @@ export function BillPage() {
 
   const { data: bill, isPending, isError, error, refetch } = useBill(sessionId)
   const tableNumber = bill?.tableNumber ?? location.state?.tableNumber
+  const isOffline = useIsOffline()
 
   return (
     <>
+
+      {isOffline && (
+        <Alert variant="destructive" className="mb-4 bg-destructive/10">
+          <WifiOff className="size-4" />
+          <AlertTitle>You are offline</AlertTitle>
+          <AlertDescription>
+            Showing cached data. New orders or updates may fail to save.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-center gap-2">
         <Button size="icon" variant="ghost" asChild>
           <Link to={`/cashier/sessions/${sessionId}`} state={{ tableNumber }}>
@@ -45,7 +58,7 @@ export function BillPage() {
           <Skeleton className="h-72 rounded-xl" />
           <Skeleton className="h-72 rounded-xl" />
         </div>
-      ) : isError ? (
+      ) : !bill && isError ? (
         <Alert variant="destructive">
           <AlertTitle>Couldn&apos;t load the bill</AlertTitle>
           <AlertDescription>

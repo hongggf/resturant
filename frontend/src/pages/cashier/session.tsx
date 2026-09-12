@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ArrowLeft, Plus, ReceiptText, UtensilsCrossed } from "lucide-react"
+import { ArrowLeft, Plus, ReceiptText, UtensilsCrossed, WifiOff } from "lucide-react"
 import { Link, useLocation, useNavigate, useParams } from "react-router"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -15,15 +15,18 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { EditLineSelectionsDialog } from "@/features/orders/components/edit-line-selections-dialog"
 import { ReasonDialog } from "@/features/sessions/components/reason-dialog"
+import { TransferDialog } from "@/features/sessions/components/transfer-dialog"
 import { RoundCard } from "@/features/sessions/components/round-card"
 import {
   useCancelRound,
   useMarkRoundReady,
   useSessionRounds,
   useUpdateLineSelections,
+  useVoidLine,
 } from "@/features/sessions/hooks/use-session-rounds"
 import type { CashierRound, RoundLine } from "@/features/sessions/types"
 import { formatPrice } from "@/lib/format"
+import { useIsOffline } from "@/hooks/use-offline"
 
 export function SessionPage() {
   const { sessionId = "" } = useParams()
@@ -35,8 +38,16 @@ export function SessionPage() {
   const markReady = useMarkRoundReady(sessionId)
   const cancelRound = useCancelRound(sessionId)
   const updateSelections = useUpdateLineSelections(sessionId)
+  const voidLine = useVoidLine(sessionId)
+
+  const [voiding, setVoiding] = useState<{
+    round: CashierRound
+    line: RoundLine
+  } | null>(null)
 
   const [cancelling, setCancelling] = useState<CashierRound | null>(null)
+  const isOffline = useIsOffline()
+  const [transferring, setTransferring] = useState(false)
   const [editing, setEditing] = useState<{
     round: CashierRound
     line: RoundLine
@@ -53,6 +64,17 @@ export function SessionPage() {
 
   return (
     <>
+
+      {isOffline && (
+        <Alert variant="destructive" className="mb-4 bg-destructive/10">
+          <WifiOff className="size-4" />
+          <AlertTitle>You are offline</AlertTitle>
+          <AlertDescription>
+            Showing cached data. New orders or updates may fail to save.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-2">
           <Button size="icon" variant="ghost" asChild>
@@ -68,6 +90,9 @@ export function SessionPage() {
             <p className="text-muted-foreground text-sm">
               {rounds.length === 1 ? "1 round" : `${rounds.length} rounds`} this
               session
+              <Button variant="link" className="px-1 h-auto text-sm" onClick={() => setTransferring(true)}>
+                (Move)
+              </Button>
             </p>
           </div>
         </div>
@@ -85,7 +110,7 @@ export function SessionPage() {
             <Skeleton key={i} className="h-32 w-full rounded-xl" />
           ))}
         </div>
-      ) : isError ? (
+      ) : !data && isError ? (
         <Alert variant="destructive">
           <AlertTitle>Couldn&apos;t load this session</AlertTitle>
           <AlertDescription>
@@ -136,6 +161,7 @@ export function SessionPage() {
               }
               onMarkReady={(r) => r.id && markReady.mutate(r.id)}
               onCancel={setCancelling}
+              onVoidLine={(r, line) => setVoiding({ round: r, line })}
               onEditLine={(r, line) => setEditing({ round: r, line })}
             />
           ))}
@@ -172,6 +198,28 @@ export function SessionPage() {
         </div>
       )}
 
+      <TransferDialog
+        sessionId={sessionId}
+        open={transferring}
+        onOpenChange={setTransferring}
+      />
+      <ReasonDialog
+        key={`void-${voiding?.line.id ?? "none"}`}
+        open={!!voiding}
+        onOpenChange={(open) => !open && setVoiding(null)}
+        title="Void item?"
+        description={`Are you sure you want to void ${voiding?.line.nameEn}?`}
+        confirmLabel="Void item"
+        pendingLabel="Voiding…"
+        pending={voidLine.isPending}
+        onConfirm={(reason) => {
+          if (!voiding?.round.id || !voiding?.line.id) return
+          voidLine.mutate(
+            { roundId: voiding.round.id, lineId: voiding.line.id, reason },
+            { onSuccess: () => setVoiding(null) }
+          )
+        }}
+      />
       <ReasonDialog
         key={`cancel-${cancelling?.id ?? "none"}`}
         open={!!cancelling}

@@ -59,6 +59,30 @@ public class CashierTableServiceImpl implements CashierTableService {
     }
 
     @Override
+
+    @Override
+    @Transactional
+    public void transferSession(UUID sessionId, UUID targetTableId) {
+        TableSession session = tableSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Session not found"));
+                
+        if (session.getStatus() != SessionStatus.ACTIVE) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Can only transfer active sessions");
+        }
+
+        DiningTable targetTable = diningTableRepository.findById(targetTableId)
+                .filter(DiningTable::isActive)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Target table not found"));
+
+        if (tableSessionRepository.findByTableIdAndStatus(targetTableId, SessionStatus.ACTIVE).isPresent()) {
+            throw new ApiException(HttpStatus.CONFLICT, "Target table already has an active session");
+        }
+
+        session.setTable(targetTable);
+        tableSessionRepository.save(session);
+    }
+
+    @Override
     public StaffSessionResponse openSession(UUID tableId) {
         DiningTable table = diningTableRepository.findById(tableId)
                 .filter(DiningTable::isActive)
