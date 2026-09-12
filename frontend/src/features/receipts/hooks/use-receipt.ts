@@ -17,7 +17,10 @@ export function useOpenReceiptPdf() {
     mutationFn: fetchReceiptPdf,
     onSuccess: (blob) => {
       const url = URL.createObjectURL(blob)
-      window.open(url, "_blank", "noopener")
+      const newWin = window.open(url, "_blank", "noopener")
+      if (!newWin) {
+        toast.error("Popup blocked. Please allow popups to view the receipt.")
+      }
       // Give the new tab time to load the blob before revoking.
       setTimeout(() => URL.revokeObjectURL(url), 60_000)
     },

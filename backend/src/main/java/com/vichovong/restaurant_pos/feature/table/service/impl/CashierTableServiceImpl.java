@@ -5,6 +5,7 @@ import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
 import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.table.dto.StaffSessionResponse;
+import com.vichovong.restaurant_pos.feature.table.dto.ClosedSessionInfo;
 import com.vichovong.restaurant_pos.feature.table.dto.TableOverviewResponse;
 import com.vichovong.restaurant_pos.feature.table.dto.TableOverviewResponse.TableState;
 import com.vichovong.restaurant_pos.feature.table.entity.DiningTable;
@@ -53,8 +54,11 @@ public class CashierTableServiceImpl implements CashierTableService {
                         .stream()
                         .collect(Collectors.groupingBy(r -> r.getSession().getId()));
 
+        Map<UUID, ClosedSessionInfo> lastClosedByTable = tableSessionRepository.findLatestClosedSessionsInfo().stream()
+                .collect(Collectors.toMap(ClosedSessionInfo::tableId, Function.identity(), (a, b) -> a));
+
         return tables.stream()
-                .map(table -> toOverview(table, sessionsByTableId.get(table.getId()), roundsBySessionId))
+                .map(table -> toOverview(table, sessionsByTableId.get(table.getId()), roundsBySessionId, lastClosedByTable.get(table.getId())))
                 .toList();
     }
 
@@ -98,10 +102,12 @@ public class CashierTableServiceImpl implements CashierTableService {
     }
 
     private TableOverviewResponse toOverview(DiningTable table, TableSession session,
-                                             Map<UUID, List<OrderRound>> roundsBySessionId) {
+                                             Map<UUID, List<OrderRound>> roundsBySessionId, ClosedSessionInfo lastClosed) {
         if (session == null) {
             return new TableOverviewResponse(table.getId(), table.getTableNumber(),
-                    TableState.IDLE, null, 0, BigDecimal.ZERO);
+                    TableState.IDLE, null, 0, BigDecimal.ZERO, 
+                    lastClosed != null ? lastClosed.sessionId() : null,
+                    lastClosed != null ? lastClosed.hasReceipt() : false);
         }
 
         List<OrderRound> liveRounds = roundsBySessionId
@@ -128,6 +134,8 @@ public class CashierTableServiceImpl implements CashierTableService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new TableOverviewResponse(table.getId(), table.getTableNumber(),
-                state, session.getId(), openRoundCount, runningTotal);
+                state, session.getId(), openRoundCount, runningTotal,
+                lastClosed != null ? lastClosed.sessionId() : null,
+                lastClosed != null ? lastClosed.hasReceipt() : false);
     }
 }

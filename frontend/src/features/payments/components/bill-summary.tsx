@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import { formatPrice } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { Bill } from "../types"
+import { ModifierBreakdown } from "@/features/sessions/components/modifier-breakdown"
 
 /** Itemized bill: every non-cancelled round's lines, then session totals. */
 export function BillSummary({ bill }: { bill: Bill }) {
@@ -18,33 +19,24 @@ export function BillSummary({ bill }: { bill: Bill }) {
               Round #{round.roundNumber}
             </p>
             {round.lines?.map((line) => (
-              <div
-                key={line.id}
-                className={cn(
-                  "flex items-baseline justify-between gap-2 text-sm",
-                  line.voided && "text-muted-foreground line-through"
-                )}
-              >
-                <span className="min-w-0">
-                  {line.quantity}× {line.nameEn}
-                  {line.selections && line.selections.length > 0 && (
-                    <span className="text-muted-foreground text-xs">
-                      {" "}
-                      (
-                      {line.selections
-                        .map((s) =>
-                          (s.quantity ?? 1) > 1
-                            ? `${s.quantity}× ${s.nameEn}`
-                            : s.nameEn
-                        )
-                        .join(", ")}
-                      )
-                    </span>
+              <div key={line.id} className="space-y-1">
+                <div
+                  className={cn(
+                    "flex items-baseline justify-between gap-2 text-sm",
+                    line.voided && "text-muted-foreground line-through"
                   )}
-                </span>
-                <span className="tabular-nums">
-                  {formatPrice(line.lineTotal)}
-                </span>
+                >
+                  <span className="min-w-0">
+                    {line.quantity}× {line.nameEn}
+                  </span>
+                  <span className="tabular-nums">
+                    {formatPrice(line.lineTotal)}
+                  </span>
+                </div>
+                <ModifierBreakdown
+                  menuItemId={line.menuItemId}
+                  selections={line.selections}
+                />
               </div>
             ))}
           </div>

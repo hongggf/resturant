@@ -41,6 +41,9 @@ public class Payment extends BaseEntity {
     @Column(name = "bill_total", nullable = false, precision = 12, scale = 2)
     private BigDecimal billTotal;
 
+    @Column(name = "khr_grand_total", precision = 14, scale = 2)
+    private BigDecimal khrGrandTotal;
+
     @Column(name = "amount_tendered", nullable = false, precision = 14, scale = 2)
     private BigDecimal amountTendered;
 

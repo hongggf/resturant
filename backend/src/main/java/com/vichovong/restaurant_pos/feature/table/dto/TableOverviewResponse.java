@@ -14,7 +14,9 @@ public record TableOverviewResponse(
         TableState state,
         UUID sessionId,
         int openRoundCount,
-        BigDecimal runningTotal
+        BigDecimal runningTotal,
+        UUID lastClosedSessionId,
+        boolean lastClosedSessionHasReceipt
 ) {
 
     public enum TableState {

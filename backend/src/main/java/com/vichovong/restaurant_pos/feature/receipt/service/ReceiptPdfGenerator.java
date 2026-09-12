@@ -2,6 +2,7 @@ package com.vichovong.restaurant_pos.feature.receipt.service;
 
 import com.itextpdf.io.font.FontProgram;
 import com.itextpdf.io.font.FontProgramFactory;
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFont;
@@ -46,7 +47,7 @@ import java.util.List;
 public class ReceiptPdfGenerator {
 
     private static final float WIDTH_80MM = 226.77f;
-    private static final PageSize RECEIPT_PAGE = new PageSize(WIDTH_80MM, 841.89f);
+    private static final PageSize MAX_PAGE = new PageSize(WIDTH_80MM, 10000f);
     private static final float MARGIN = 12f;
     private static final DateTimeFormatter TS =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
@@ -64,7 +65,7 @@ public class ReceiptPdfGenerator {
             PdfDocument pdf = new PdfDocument(new PdfWriter(out));
             Fonts fonts = new Fonts(khmerFontProgram);
 
-            try (Document doc = new Document(pdf, RECEIPT_PAGE)) {
+            try (Document doc = new Document(pdf, MAX_PAGE)) {
                 doc.setMargins(MARGIN, MARGIN, MARGIN, MARGIN);
 
                 doc.add(text(r.restaurantName(), fonts, 12, true).setTextAlignment(TextAlignment.CENTER));
@@ -110,6 +111,13 @@ public class ReceiptPdfGenerator {
                 doc.add(separator());
                 doc.add(text(fonts.hasKhmer() ? "Thank you! សូមអរគុណ" : "Thank you!", fonts, 9, false)
                         .setTextAlignment(TextAlignment.CENTER));
+                
+                // Crop the page to content height
+                float bottomY = doc.getRenderer().getCurrentArea().getBBox().getY();
+                float cropY = bottomY - MARGIN;
+                if (cropY < 0) cropY = 0;
+                float height = MAX_PAGE.getHeight() - cropY;
+                pdf.getPage(1).setMediaBox(new Rectangle(0, cropY, WIDTH_80MM, height));
             }
             return out.toByteArray();
         } catch (IOException e) {

@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -54,9 +55,13 @@ public class ReceiptServiceImpl implements ReceiptService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ReceiptPdf pdf(UUID receiptId) {
         Receipt receipt = requireReceipt(receiptId);
+        if (receipt.getFirstPrintedAt() == null) {
+            receipt.setFirstPrintedAt(Instant.now());
+            receiptRepository.save(receipt);
+        }
         return new ReceiptPdf(
                 "receipt-" + receipt.getReceiptNumber() + ".pdf",
                 pdfGenerator.generate(payload(receipt)));

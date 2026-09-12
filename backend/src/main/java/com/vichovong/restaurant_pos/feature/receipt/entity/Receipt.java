@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.time.Instant;
 
 /**
  * Numbered receipt for a confirmed payment (Phase 8). Created in the same
@@ -29,4 +30,7 @@ public class Receipt extends BaseEntity {
 
     @Column(name = "receipt_number", nullable = false, unique = true, length = 20)
     private String receiptNumber;
+
+    @Column(name = "first_printed_at")
+    private Instant firstPrintedAt;
 }

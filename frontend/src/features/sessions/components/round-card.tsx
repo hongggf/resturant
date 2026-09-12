@@ -1,4 +1,3 @@
-import { useMemo } from "react"
 import { Ban, CheckCheck, Pencil } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -19,13 +18,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useItemModifierGroups } from "@/features/orders/hooks/use-manual-order"
-import type { AttachedModifierGroup } from "@/features/modifiers/types"
 import { formatPrice } from "@/lib/format"
+import { ModifierBreakdown } from "./modifier-breakdown"
 import { cn } from "@/lib/utils"
 import type { CashierRound, RoundLine, RoundStatus } from "../types"
 
-type RoundSelection = NonNullable<RoundLine["selections"]>[number]
 
 const statusBadges: Record<RoundStatus, string> = {
   SENT: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
@@ -40,66 +37,13 @@ const timeFormat = new Intl.DateTimeFormat(undefined, {
 })
 
 /** Maps a modifier option id to the group it belongs to today. */
-function buildGroupLookup(groups: AttachedModifierGroup[]) {
-  const lookup = new Map<string, { nameEn?: string; order: number }>()
-  groups.forEach((attached, index) => {
-    const order = attached.sortOrder ?? index
-    for (const option of attached.group?.options ?? []) {
-      if (option.id) lookup.set(option.id, { nameEn: attached.group?.nameEn, order })
-    }
-  })
-  return lookup
-}
 
-/** Selections bucketed by modifier group, in group display order. Selections
- *  whose option no longer belongs to any attached group (deleted/reconfigured
- *  since send-time) fall into a single trailing, unlabeled bucket. */
-function groupSelections(
-  selections: RoundSelection[],
-  lookup: Map<string, { nameEn?: string; order: number }>
-) {
-  const groups: {
-    key: string
-    nameEn?: string
-    order: number
-    items: RoundSelection[]
-  }[] = []
-  selections.forEach((selection, index) => {
-    const info = selection.modifierOptionId
-      ? lookup.get(selection.modifierOptionId)
-      : undefined
-    const key = info?.nameEn ?? "__ungrouped__"
-    let bucket = groups.find((g) => g.key === key)
-    if (!bucket) {
-      bucket = {
-        key,
-        nameEn: info?.nameEn,
-        order: info?.order ?? Number.MAX_SAFE_INTEGER + index,
-        items: [],
-      }
-      groups.push(bucket)
-    }
-    bucket.items.push(selection)
-  })
-  return groups.sort((a, b) => a.order - b.order)
-}
 
 interface RoundLineItemProps {
   line: RoundLine
 }
 
 function RoundLineItem({ line }: RoundLineItemProps) {
-  const { data: attachedGroups } = useItemModifierGroups(
-    line.menuItemId ?? undefined
-  )
-  const lookup = useMemo(
-    () => buildGroupLookup(attachedGroups ?? []),
-    [attachedGroups]
-  )
-  const groups = line.selections?.length
-    ? groupSelections(line.selections, lookup)
-    : []
-
   return (
     <li className="grid grid-cols-[1fr_auto] items-start gap-x-2 gap-y-1">
       <p
@@ -118,42 +62,12 @@ function RoundLineItem({ line }: RoundLineItemProps) {
       >
         {formatPrice(line.lineTotal)}
       </span>
-      {groups.length > 0 && (
-        <div className="col-span-2 space-y-1">
-          {groups.map((group) => (
-            <div key={group.key}>
-              {group.nameEn && (
-                <p className="text-muted-foreground text-[11px] font-medium">
-                  {group.nameEn}
-                </p>
-              )}
-              <ul className="text-muted-foreground text-xs">
-                {group.items.map((s) => {
-                  const price = (s.unitPrice ?? 0) * (s.quantity ?? 1)
-                  return (
-                    <li
-                      key={s.modifierOptionId ?? s.nameEn}
-                      className="flex items-center justify-between gap-2"
-                    >
-                      <span>
-                        •{" "}
-                        {(s.quantity ?? 1) > 1
-                          ? `${s.nameEn} ×${s.quantity}`
-                          : s.nameEn}
-                      </span>
-                      {price > 0 && (
-                        <span className="tabular-nums">
-                          {formatPrice(price)}
-                        </span>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="col-span-2">
+        <ModifierBreakdown
+          menuItemId={line.menuItemId}
+          selections={line.selections}
+        />
+      </div>
       {line.remark && (
         <p className="text-muted-foreground col-span-2 text-xs italic">
           “{line.remark}”

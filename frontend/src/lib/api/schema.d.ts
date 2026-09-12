@@ -1296,6 +1296,9 @@ export interface components {
             /** Format: int32 */
             openRoundCount?: number;
             runningTotal?: number;
+            /** Format: uuid */
+            lastClosedSessionId?: string;
+            lastClosedSessionHasReceipt?: boolean;
         };
         ApiResponseListCashierRoundResponse: {
             success?: boolean;
