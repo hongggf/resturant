@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // QR scan entry point — guests have no credentials yet
                         .requestMatchers(HttpMethod.POST, "/api/v1/guest/sessions").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/promos/active").permitAll()
                         // Menu/modifier images render in <img> tags, which cannot send a JWT
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/v1/guest/**").hasRole("GUEST")

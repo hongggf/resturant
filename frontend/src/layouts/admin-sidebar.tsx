@@ -51,6 +51,12 @@ const navGroups = [
       { title: "Users", url: "/admin/users", icon: Users },
     ],
   },
+  {
+    label: "Marketing",
+    items: [
+      { title: "Promotions", url: "/admin/promotions", icon: Tags },
+    ],
+  },
 ]
 
 export function AdminSidebar() {

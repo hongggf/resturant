@@ -17,9 +17,44 @@ import { formatPrice } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useGuestCategories, useGuestMenuItems } from "../hooks/use-guest-menu"
 import type { MenuItem } from "../types"
+import { useActivePromo } from "@/features/promo/hooks"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { assetUrl } from "@/lib/api/client"
 
 interface GuestMenuBrowserProps {
   onPick: (item: MenuItem) => void
+}
+
+function PromoPopup() {
+  const { data: promo } = useActivePromo()
+  const [showPromo, setShowPromo] = useState(true)
+
+  if (!promo || !promo.active || !showPromo) return null
+
+  return (
+    <Dialog open={showPromo} onOpenChange={setShowPromo}>
+      <DialogContent className="max-w-sm rounded-xl p-0 overflow-hidden bg-card">
+        {promo.imageUrl && (
+          <img src={assetUrl(resolveItemImage(undefined, promo.imageUrl, "hero") || promo.imageUrl) || ""} className="w-full aspect-[4/3] object-cover" alt="" />
+        )}
+        <div className="p-6 pt-4 space-y-4">
+          <DialogHeader className="text-left space-y-2">
+            <DialogTitle className="text-xl font-bold">{promo.title}</DialogTitle>
+            <DialogDescription className="text-base text-foreground/80">{promo.description}</DialogDescription>
+          </DialogHeader>
+          <Button className="w-full h-12 text-lg rounded-xl mt-4" onClick={() => setShowPromo(false)}>
+            Got it
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
@@ -42,6 +77,7 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
+      <PromoPopup />
       <div className="flex gap-2 overflow-x-auto pb-1">
         <Badge
           asChild

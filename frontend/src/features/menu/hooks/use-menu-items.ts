@@ -46,6 +46,8 @@ export function useCurrencies() {
   })
 }
 
+import { uploadImage } from "@/features/upload/api/upload"
+
 function useInvalidateMenuItems() {
   const queryClient = useQueryClient()
   return () => queryClient.invalidateQueries({ queryKey: ["menu-items"] })
@@ -58,12 +60,15 @@ export function useCreateMenuItem() {
       body,
       image,
     }: {
-      body: MenuItemCreateRequest
+      body: MenuItemCreateRequest & { imageUrl?: string | null }
       image?: File
     }) => {
-      const item = await createMenuItem(body)
-      if (image && item.id) return uploadMenuItemImage(item.id, image)
-      return item
+      let finalBody = { ...body }
+      if (image) {
+        const { url } = await uploadImage(image)
+        finalBody.imageUrl = url
+      }
+      return createMenuItem(finalBody)
     },
     onSuccess: (data) => {
       invalidate()
@@ -82,12 +87,15 @@ export function useUpdateMenuItem() {
       image,
     }: {
       id: string
-      body: MenuItemUpdateRequest
+      body: MenuItemUpdateRequest & { imageUrl?: string | null }
       image?: File
     }) => {
-      const item = await updateMenuItem(id, body)
-      if (image) return uploadMenuItemImage(id, image)
-      return item
+      let finalBody = { ...body }
+      if (image) {
+        const { url } = await uploadImage(image)
+        finalBody.imageUrl = url
+      }
+      return updateMenuItem(id, finalBody)
     },
     onSuccess: (data) => {
       invalidate()

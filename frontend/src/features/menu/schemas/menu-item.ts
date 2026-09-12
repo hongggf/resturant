@@ -11,6 +11,7 @@ export const menuItemSchema = z.object({
   currencyCode: z.string().min(1, "Currency is required"),
   categoryId: z.string().min(1, "Category is required"),
   available: z.boolean(),
+  imageUrl: z.string().optional().nullable(),
 })
 
 export type MenuItemValues = z.infer<typeof menuItemSchema>

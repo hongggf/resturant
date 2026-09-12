@@ -72,17 +72,16 @@ const KNOWN_FOOD_IMAGES: Record<string, string> = {
  */
 export type FoodImageSize = "hero" | "card" | "thumb"
 
-const BARE_FOOD_IMAGE = /^\/food-images\/([^/]+)$/
+const BARE_FOOD_IMAGE = /^\/(food-images|uploads)\/([^/]+)$/
 
 /**
- * Points a bare `/food-images/x.jpg` at the variant for `size`. Hero is served
+ * Points a bare `/food-images/x.jpg` or `/uploads/x.jpg` at the variant for `size`. Hero is served
  * at the bare path, so it needs no rewrite; matching on the bare form also
- * keeps this idempotent. Anything else — an uploaded `/uploads/` file, an
- * absolute URL — has no variants and is returned untouched.
+ * keeps this idempotent. Anything else — an absolute URL — has no variants and is returned untouched.
  */
 function sizedFoodImage(path: string, size: FoodImageSize): string {
   if (size === "hero") return path
-  return path.replace(BARE_FOOD_IMAGE, `/food-images/${size}/$1`)
+  return path.replace(BARE_FOOD_IMAGE, `/$1/${size}/$2`)
 }
 
 /**

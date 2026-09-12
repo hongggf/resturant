@@ -90,6 +90,7 @@ export const router = createBrowserRouter([
           { path: "categories", element: withSuspense(CategoriesPage) },
           { path: "menu-items", element: withSuspense(MenuItemsPage) },
           { path: "modifier-groups", element: withSuspense(ModifierGroupsPage) },
+          { path: "promotions", element: withSuspense(lazy(() => import("@/pages/admin/promotions").then(m => ({ default: m.PromotionsPage })))) },
           { path: "tables", element: withSuspense(TablesPage) },
           { path: "users", element: withSuspense(UsersPage) },
         ],
