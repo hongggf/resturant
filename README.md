@@ -304,10 +304,12 @@ Configuration is managed via the root `.env` file:
 
 ---
 
-## 🚢 Production Deployment & CI/CD
+## 🚢 Production Deployment & Hosting
 
-- **Automated Deployments**: The repository includes a GitHub Actions workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). When code is pushed to `main`, it connects to the production EC2 host via SSH, pulls the latest commits, rebuilds Docker containers, and prunes old images.
-- **SSL / HTTPS**: Configured in [frontend/nginx.conf](frontend/nginx.conf) with Let's Encrypt certificates for `vongpos.com` and `www.vongpos.com`.
+- **Laptop Hosting via Cloudflare Tunnels**: This system is self-hosted locally on a roaming Ubuntu laptop. It uses Cloudflare Tunnels (`cloudflared` in `docker-compose.yml`) to securely expose the application to the internet (`vongpos.com`) without opening router ports or requiring a static IP.
+- **SSL / HTTPS**: SSL certificates and HTTPS termination are handled automatically by Cloudflare. The local `nginx.conf` is configured to run plain HTTP, which Cloudflare encrypts securely.
+- **Deploying Updates**: Because the host is a roaming laptop, the old GitHub Actions automated SSH deployment has been disabled. To deploy new code, simply pull the latest `main` branch on the host machine and run `docker compose up -d --build`.
+- **Database Port**: The PostgreSQL database exposes port `5435` instead of the default `5432` to intentionally prevent collisions with other local AI and microservice projects running on the same laptop.
 
 ---
 
