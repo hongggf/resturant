@@ -26,7 +26,7 @@ export function OverviewPage() {
     setIsPrinting(true)
     try {
       const page = await listTables({ page: 0, size: 500 })
-      const tables = page.content
+      const tables = page.content || []
 
       if (!tables.length) {
         alert("No tables found to print.")
