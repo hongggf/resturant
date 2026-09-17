@@ -1,5 +1,6 @@
 package com.vichovong.restaurant_pos.feature.promo.controller;
 
+import com.vichovong.restaurant_pos.common.dto.ApiResponse;
 import com.vichovong.restaurant_pos.feature.promo.dto.GuestPromoDto;
 import com.vichovong.restaurant_pos.feature.promo.entity.GuestPromo;
 import com.vichovong.restaurant_pos.feature.promo.repository.GuestPromoRepository;
@@ -17,19 +18,20 @@ public class GuestPromoController {
     private final GuestPromoRepository repository;
 
     @GetMapping("/active")
-    public ResponseEntity<GuestPromo> getActivePromo() {
-        return repository.findByIsActiveTrue()
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.noContent().build());
+    public ResponseEntity<ApiResponse<GuestPromo>> getActivePromo() {
+        // Return the first active promo if there are multiple
+        return repository.findAll().stream().filter(GuestPromo::isActive).findFirst()
+                .map(promo -> ResponseEntity.ok(ApiResponse.success(promo)))
+                .orElse(ResponseEntity.ok(ApiResponse.success(null)));
     }
 
     @GetMapping
-    public List<GuestPromo> getAllPromos() {
-        return repository.findAll();
+    public ResponseEntity<ApiResponse<List<GuestPromo>>> getAllPromos() {
+        return ResponseEntity.ok(ApiResponse.success(repository.findAll()));
     }
 
     @PostMapping
-    public GuestPromo createPromo(@RequestBody GuestPromoDto dto) {
+    public ResponseEntity<ApiResponse<GuestPromo>> createPromo(@RequestBody GuestPromoDto dto) {
         if (dto.isActive()) {
             deactivateAll();
         }
@@ -39,11 +41,11 @@ public class GuestPromoController {
                 .imageUrl(dto.getImageUrl())
                 .isActive(dto.isActive())
                 .build();
-        return repository.save(promo);
+        return ResponseEntity.ok(ApiResponse.success(repository.save(promo)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<GuestPromo> updatePromo(@PathVariable Long id, @RequestBody GuestPromoDto dto) {
+    public ResponseEntity<ApiResponse<GuestPromo>> updatePromo(@PathVariable Long id, @RequestBody GuestPromoDto dto) {
         return repository.findById(id).map(promo -> {
             if (dto.isActive() && !promo.isActive()) {
                 deactivateAll();
@@ -52,14 +54,14 @@ public class GuestPromoController {
             promo.setDescription(dto.getDescription());
             promo.setImageUrl(dto.getImageUrl());
             promo.setActive(dto.isActive());
-            return ResponseEntity.ok(repository.save(promo));
+            return ResponseEntity.ok(ApiResponse.success(repository.save(promo)));
         }).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePromo(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deletePromo(@PathVariable Long id) {
         repository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     private void deactivateAll() {

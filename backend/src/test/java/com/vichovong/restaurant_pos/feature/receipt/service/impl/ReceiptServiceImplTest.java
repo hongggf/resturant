@@ -94,7 +94,7 @@ class ReceiptServiceImplTest {
         );
 
         receiptResponse = new ReceiptResponse(
-                "KaiXin Restaurant",
+                "Malatang Restaurant",
                 receipt.getId(),
                 receipt.getReceiptNumber(),
                 Instant.now(),
@@ -134,7 +134,7 @@ class ReceiptServiceImplTest {
 
         assertThat(response).isNotNull();
         assertThat(response.receiptNumber()).isEqualTo("R-20260823-0042");
-        assertThat(response.restaurantName()).isEqualTo("KaiXin Restaurant");
+        assertThat(response.restaurantName()).isEqualTo("Malatang Restaurant");
     }
 
     @Test
