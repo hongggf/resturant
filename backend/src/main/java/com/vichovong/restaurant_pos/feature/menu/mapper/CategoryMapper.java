@@ -18,6 +18,7 @@ public interface CategoryMapper {
                 category.getDescription(),
                 category.getSortOrder(),
                 category.isActive(),
+                category.isAllowNotes(),
                 category.getCreatedAt(),
                 category.getUpdatedAt()
         );

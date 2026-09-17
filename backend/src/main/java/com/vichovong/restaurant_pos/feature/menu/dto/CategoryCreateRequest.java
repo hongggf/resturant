@@ -9,6 +9,7 @@ public record CategoryCreateRequest(
         @NotBlank String nameKm,
         String description,
         @NotNull @PositiveOrZero Integer sortOrder,
-        boolean active
+        boolean active,
+        Boolean allowNotes
 ) {
 }

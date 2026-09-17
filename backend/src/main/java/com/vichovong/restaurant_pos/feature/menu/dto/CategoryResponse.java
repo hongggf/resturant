@@ -10,6 +10,7 @@ public record CategoryResponse(
         String description,
         int sortOrder,
         boolean active,
+        boolean allowNotes,
         Instant createdAt,
         Instant updatedAt
 ) {

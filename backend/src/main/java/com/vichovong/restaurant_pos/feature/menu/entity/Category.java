@@ -29,4 +29,7 @@ public class Category extends BaseEntity {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @Column(name = "allow_notes", nullable = false)
+    private boolean allowNotes = true;
 }

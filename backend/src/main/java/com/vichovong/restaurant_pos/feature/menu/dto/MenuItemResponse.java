@@ -16,6 +16,7 @@ public record MenuItemResponse(
         boolean available,
         UUID categoryId,
         String categoryNameEn,
+        boolean categoryAllowNotes,
         Instant createdAt,
         Instant updatedAt
 ) {

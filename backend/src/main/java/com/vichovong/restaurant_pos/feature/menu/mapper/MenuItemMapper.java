@@ -23,6 +23,7 @@ public interface MenuItemMapper {
                 menuItem.isAvailable(),
                 menuItem.getCategory().getId(),
                 menuItem.getCategory().getNameEn(),
+                menuItem.getCategory() == null || menuItem.getCategory().isAllowNotes(),
                 menuItem.getCreatedAt(),
                 menuItem.getUpdatedAt()
         );

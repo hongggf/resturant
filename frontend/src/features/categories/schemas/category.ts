@@ -9,6 +9,7 @@ export const categorySchema = z.object({
     .int("Sort order must be a whole number")
     .min(0, "Sort order can't be negative"),
   active: z.boolean(),
+  allowNotes: z.boolean(),
 })
 
 export type CategoryValues = z.infer<typeof categorySchema>

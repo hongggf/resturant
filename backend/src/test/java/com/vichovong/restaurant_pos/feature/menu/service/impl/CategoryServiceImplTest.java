@@ -60,6 +60,7 @@ class CategoryServiceImplTest {
         category1.setDescription("Hot and iced coffee drinks");
         category1.setSortOrder(1);
         category1.setActive(true);
+        category1.setAllowNotes(true);
         category1.setCreatedAt(Instant.now());
         category1.setUpdatedAt(Instant.now());
 
@@ -70,6 +71,7 @@ class CategoryServiceImplTest {
         category2.setDescription("Freshly baked pastries");
         category2.setSortOrder(2);
         category2.setActive(false);
+        category2.setAllowNotes(false);
         category2.setCreatedAt(Instant.now());
         category2.setUpdatedAt(Instant.now());
     }
@@ -135,6 +137,7 @@ class CategoryServiceImplTest {
                 "តែ",
                 "Loose leaf teas",
                 3,
+                true,
                 true
         );
 
@@ -153,6 +156,7 @@ class CategoryServiceImplTest {
         assertThat(response.description()).isEqualTo("Loose leaf teas");
         assertThat(response.sortOrder()).isEqualTo(3);
         assertThat(response.active()).isTrue();
+        assertThat(response.allowNotes()).isTrue();
     }
 
     @Test
@@ -163,6 +167,7 @@ class CategoryServiceImplTest {
                 "កាហ្វេពិសេស",
                 "Updated description",
                 5,
+                false,
                 false
         );
 
@@ -175,6 +180,7 @@ class CategoryServiceImplTest {
         assertThat(response.description()).isEqualTo("Updated description");
         assertThat(response.sortOrder()).isEqualTo(5);
         assertThat(response.active()).isFalse();
+        assertThat(response.allowNotes()).isFalse();
     }
 
     @Test
@@ -182,7 +188,7 @@ class CategoryServiceImplTest {
     void update_nonExistingId_throwsNotFound() {
         UUID unknownId = UUID.randomUUID();
         CategoryUpdateRequest request = new CategoryUpdateRequest(
-                "Tea", "តែ", null, 1, true
+                "Tea", "តែ", null, 1, true, true
         );
 
         when(categoryRepository.findById(unknownId)).thenReturn(Optional.empty());

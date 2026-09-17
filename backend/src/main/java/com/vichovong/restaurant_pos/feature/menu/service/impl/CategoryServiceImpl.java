@@ -49,7 +49,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse create(CategoryCreateRequest request) {
         Category category = new Category();
         applyRequest(category, request.nameEn(), request.nameKm(), request.description(),
-                request.sortOrder(), request.active());
+                request.sortOrder(), request.active(), request.allowNotes());
         return categoryMapper.toResponse(categoryRepository.save(category));
     }
 
@@ -58,7 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse update(UUID id, CategoryUpdateRequest request) {
         Category category = findCategory(id);
         applyRequest(category, request.nameEn(), request.nameKm(), request.description(),
-                request.sortOrder(), request.active());
+                request.sortOrder(), request.active(), request.allowNotes());
         return categoryMapper.toResponse(category);
     }
 
@@ -73,12 +73,15 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     private void applyRequest(Category category, String nameEn, String nameKm, String description,
-                               int sortOrder, boolean active) {
+                               int sortOrder, boolean active, Boolean allowNotes) {
         category.setNameEn(nameEn);
         category.setNameKm(nameKm);
         category.setDescription(description);
         category.setSortOrder(sortOrder);
         category.setActive(active);
+        if (allowNotes != null) {
+            category.setAllowNotes(allowNotes);
+        }
     }
 
     private Category findCategory(UUID id) {
