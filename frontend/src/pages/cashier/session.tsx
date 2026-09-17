@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { ArrowLeft, Plus, ReceiptText, UtensilsCrossed, WifiOff } from "lucide-react"
-import { Link, useLocation, useNavigate, useParams } from "react-router"
+import { Plus, ReceiptText, UtensilsCrossed, WifiOff } from "lucide-react"
+import { useLocation, useNavigate, useParams } from "react-router"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -63,10 +63,9 @@ export function SessionPage() {
     .reduce((sum, r) => sum + (r.grandTotal ?? 0), 0)
 
   return (
-    <>
-
+    <div className="flex h-full flex-col">
       {isOffline && (
-        <Alert variant="destructive" className="mb-4 bg-destructive/10">
+        <Alert variant="destructive" className="mb-4 bg-destructive/10 shrink-0">
           <WifiOff className="size-4" />
           <AlertTitle>You are offline</AlertTitle>
           <AlertDescription>
@@ -75,135 +74,122 @@ export function SessionPage() {
         </Alert>
       )}
 
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Button size="icon" variant="ghost" asChild>
-            <Link to="/cashier">
-              <ArrowLeft />
-              <span className="sr-only">Back to tables</span>
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {tableNumber ? `Table ${tableNumber}` : "Session"}
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              {rounds.length === 1 ? "1 round" : `${rounds.length} rounds`} this
-              session
-              <Button variant="link" className="px-1 h-auto text-sm" onClick={() => setTransferring(true)}>
-                (Move)
-              </Button>
-            </p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="text-muted-foreground text-xs">Running total</p>
-          <p className="text-2xl font-semibold tabular-nums">
+      <div className="sticky top-0 z-10 bg-card pb-4 border-b shrink-0 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">
+            {tableNumber ? `Table ${tableNumber}` : "Session"}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {rounds.length === 1 ? "1 round" : `${rounds.length} rounds`}
+            <Button variant="link" className="px-1 h-auto text-sm" onClick={() => setTransferring(true)}>
+              (Move)
+            </Button>
+          </p>
+          <p className="text-xl font-semibold tabular-nums mt-1">
             {formatPrice(total)}
           </p>
         </div>
-      </div>
-
-            {isRefetchError && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Connection lost</AlertTitle>
-          <AlertDescription>Reconnecting to the server...</AlertDescription>
-        </Alert>
-      )}
-
-      {isPending ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }, (_, i) => (
-            <Skeleton key={i} className="h-32 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : isLoadingError ? (
-        <Alert variant="destructive">
-          <AlertTitle>Couldn&apos;t load this session</AlertTitle>
-          <AlertDescription>
-            <p>{error.message}</p>
+        
+        {rounds.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <Button
+              size="sm"
+              onClick={() =>
+                navigate(`/cashier/sessions/${sessionId}/order`, {
+                  state: { tableNumber },
+                })
+              }
+            >
+              <Plus className="mr-2 size-4" />
+              Add order
+            </Button>
             <Button
               variant="outline"
               size="sm"
-              className="mt-2"
-              onClick={() => refetch()}
-            >
-              Try again
-            </Button>
-          </AlertDescription>
-        </Alert>
-      ) : rounds.length === 0 ? (
-        <Empty className="border border-dashed">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <UtensilsCrossed />
-            </EmptyMedia>
-            <EmptyTitle>No orders yet</EmptyTitle>
-            <EmptyDescription>
-              Guests can scan the table QR to order from their phones, or you
-              can take their order here.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button
-              onClick={() =>
-                navigate(`/cashier/sessions/${sessionId}/order`, {
-                  state: { tableNumber },
-                })
-              }
-            >
-              <Plus />
-              Add order
-            </Button>
-          </EmptyContent>
-        </Empty>
-      ) : (
-        <div className="space-y-3 pb-20">
-          {rounds.map((round) => (
-            <RoundCard
-              key={round.id}
-              round={round}
-              markingReady={
-                markReady.isPending && markReady.variables === round.id
-              }
-              onMarkReady={(r) => r.id && markReady.mutate(r.id)}
-              onCancel={setCancelling}
-              onVoidLine={(r, line) => setVoiding({ round: r, line })}
-              onEditLine={(r, line) => setEditing({ round: r, line })}
-            />
-          ))}
-        </div>
-      )}
-
-      {rounds.length > 0 && (
-        <div className="bg-background/95 fixed inset-x-0 bottom-0 border-t p-3 backdrop-blur">
-          <div className="mx-auto flex max-w-3xl justify-between gap-3">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() =>
-                navigate(`/cashier/sessions/${sessionId}/order`, {
-                  state: { tableNumber },
-                })
-              }
-            >
-              <Plus />
-              Add order
-            </Button>
-            <Button
-              className="flex-1"
               onClick={() =>
                 navigate(`/cashier/sessions/${sessionId}/bill`, {
                   state: { tableNumber },
                 })
               }
             >
-              <ReceiptText />
+              <ReceiptText className="mr-2 size-4" />
               View bill
             </Button>
           </div>
-        </div>
+        )}
+      </div>
+
+      {isRefetchError && (
+        <Alert variant="destructive" className="mt-4 shrink-0">
+          <AlertTitle>Connection lost</AlertTitle>
+          <AlertDescription>Reconnecting to the server...</AlertDescription>
+        </Alert>
       )}
+
+      <div className="flex-1 overflow-y-auto pt-4 pb-10">
+        {isPending ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }, (_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : isLoadingError ? (
+          <Alert variant="destructive">
+            <AlertTitle>Couldn&apos;t load this session</AlertTitle>
+            <AlertDescription>
+              <p>{error.message}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => refetch()}
+              >
+                Try again
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : rounds.length === 0 ? (
+          <Empty className="border border-dashed h-full">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <UtensilsCrossed />
+              </EmptyMedia>
+              <EmptyTitle>No orders yet</EmptyTitle>
+              <EmptyDescription>
+                Take an order here or guests can scan the QR code.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button
+                onClick={() =>
+                  navigate(`/cashier/sessions/${sessionId}/order`, {
+                    state: { tableNumber },
+                  })
+                }
+              >
+                <Plus className="mr-2 size-4" />
+                Add order
+              </Button>
+            </EmptyContent>
+          </Empty>
+        ) : (
+          <div className="space-y-3">
+            {rounds.map((round) => (
+              <RoundCard
+                key={round.id}
+                round={round}
+                markingReady={
+                  markReady.isPending && markReady.variables === round.id
+                }
+                onMarkReady={(r) => r.id && markReady.mutate(r.id)}
+                onCancel={setCancelling}
+                onVoidLine={(r, line) => setVoiding({ round: r, line })}
+                onEditLine={(r, line) => setEditing({ round: r, line })}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       <TransferDialog
         sessionId={sessionId}
@@ -259,6 +245,6 @@ export function SessionPage() {
           }}
         />
       )}
-    </>
+    </div>
   )
 }

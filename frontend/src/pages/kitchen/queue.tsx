@@ -3,13 +3,6 @@ import { CookingPot } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { KitchenTicket } from "@/features/kitchen/components/kitchen-ticket"
 import { minutesWaiting } from "@/features/kitchen/lib/ticket-age"
@@ -18,9 +11,6 @@ import {
   useMarkKitchenRoundReady,
 } from "@/features/kitchen/hooks/use-kitchen-queue"
 import type { CashierRound } from "@/features/sessions/types"
-
-const gridClass =
-  "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-start"
 
 // Ticket age is derived from a clock, not from the data, so refetching alone
 // would leave "12m" frozen when the queue itself hasn't changed.
@@ -70,6 +60,8 @@ export function KitchenQueuePage() {
   const { data: ready } = useKitchenQueue("READY", READY_REFETCH_MS)
   const markReady = useMarkKitchenRoundReady()
 
+  const [cookingIds, setCookingIds] = useState<Set<string>>(new Set())
+
   const rounds = data ?? []
   const readyRounds = ready ?? []
   const oldest = rounds.reduce(
@@ -94,23 +86,45 @@ export function KitchenQueuePage() {
       playBeep()
     }
     seenIds.current = currentIds
+    
+    // Cleanup cookingIds that are no longer in SENT rounds
+    setCookingIds(prev => {
+      const next = new Set<string>()
+      for (const id of prev) {
+        if (currentIds.has(id)) next.add(id)
+      }
+      return next.size === prev.size ? prev : next
+    })
   }, [data])
+
+  function handleStartCooking(round: CashierRound) {
+    if (round.id) {
+      setCookingIds(prev => {
+        const next = new Set(prev)
+        next.add(round.id!)
+        return next
+      })
+    }
+  }
 
   function handleMarkReady(round: CashierRound) {
     if (round.id) markReady.mutate(round.id)
   }
 
+  const newRounds = rounds.filter(r => r.id && !cookingIds.has(r.id))
+  const cookingRounds = rounds.filter(r => r.id && cookingIds.has(r.id))
+
   return (
-    <>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 shrink-0 mb-4 px-2">
         <div>
-          <h1 className="text-xl font-semibold">Cook queue</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Kitchen Production Board</h1>
           <p className="text-muted-foreground text-sm">
-            Oldest first. Marking a ticket ready sends it to the cashier.
+            Oldest first. Mark items when done, then mark round ready.
           </p>
         </div>
         {rounds.length > 0 && (
-          <p className="text-muted-foreground text-sm tabular-nums">
+          <p className="text-muted-foreground text-sm tabular-nums font-medium">
             {rounds.length === 1 ? "1 ticket" : `${rounds.length} tickets`} ·
             oldest {oldest}m
             {readyRounds.length > 0 && ` · ${readyRounds.length} ready`}
@@ -118,21 +132,24 @@ export function KitchenQueuePage() {
         )}
       </div>
 
-            {isRefetchError && (
-        <Alert variant="destructive" className="mb-4">
+      {isRefetchError && (
+        <Alert variant="destructive" className="mb-4 shrink-0">
           <AlertTitle>Connection lost</AlertTitle>
           <AlertDescription>Reconnecting to the server...</AlertDescription>
         </Alert>
       )}
 
       {isPending ? (
-        <div className={gridClass}>
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-64 rounded-xl" />
+        <div className="flex flex-1 gap-6 overflow-hidden p-2">
+          {Array.from({ length: 3 }, (_, i) => (
+            <div key={i} className="flex-1 min-w-[300px] space-y-4">
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="h-64 rounded-xl w-full" />
+            </div>
           ))}
         </div>
       ) : isLoadingError ? (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="shrink-0">
           <AlertTitle>Couldn&apos;t load the cook queue</AlertTitle>
           <AlertDescription>
             <p>{error.message}</p>
@@ -146,50 +163,90 @@ export function KitchenQueuePage() {
             </Button>
           </AlertDescription>
         </Alert>
-      ) : rounds.length === 0 ? (
-        <Empty className="border border-dashed">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <CookingPot />
-            </EmptyMedia>
-            <EmptyTitle>Nothing to cook</EmptyTitle>
-            <EmptyDescription>
-              New rounds appear here automatically as guests and cashiers send
-              them.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
       ) : (
-        <div className={gridClass}>
-          {rounds.map((round) => (
-            <KitchenTicket
-              key={round.id}
-              round={round}
-              now={now}
-              marking={markReady.isPending && markReady.variables === round.id}
-              onMarkReady={handleMarkReady}
-            />
-          ))}
+        <div className="flex flex-1 gap-6 overflow-x-auto pb-4 pt-2 px-2 snap-x">
+          {/* New / Prep Column */}
+          <div className="flex flex-col min-w-[320px] max-w-[400px] flex-shrink-0 snap-start bg-muted/30 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <h2 className="text-lg font-bold">New / Prep</h2>
+              <span className="bg-muted px-2 py-1 rounded-full text-xs font-semibold tabular-nums">{newRounds.length}</span>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto space-y-4 pb-12 pr-2 scrollbar-thin">
+              {newRounds.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground border-2 border-dashed rounded-xl">
+                  <CookingPot className="size-8 mb-2 opacity-50" />
+                  <p className="text-sm">No new tickets</p>
+                </div>
+              ) : (
+                newRounds.map((round) => (
+                  <KitchenTicket
+                    key={round.id}
+                    round={round}
+                    now={now}
+                    column="NEW"
+                    marking={false}
+                    onStartCooking={handleStartCooking}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Cooking Column */}
+          <div className="flex flex-col min-w-[320px] max-w-[400px] flex-shrink-0 snap-start bg-muted/30 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <h2 className="text-lg font-bold">Cooking</h2>
+              <span className="bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 px-2 py-1 rounded-full text-xs font-semibold tabular-nums">{cookingRounds.length}</span>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto space-y-4 pb-12 pr-2 scrollbar-thin">
+              {cookingRounds.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground border-2 border-dashed rounded-xl">
+                  <p className="text-sm">Nothing is cooking</p>
+                </div>
+              ) : (
+                cookingRounds.map((round) => (
+                  <KitchenTicket
+                    key={round.id}
+                    round={round}
+                    now={now}
+                    column="COOKING"
+                    marking={markReady.isPending && markReady.variables === round.id}
+                    onMarkReady={handleMarkReady}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Ready / Expedite Column */}
+          <div className="flex flex-col min-w-[320px] max-w-[400px] flex-shrink-0 snap-start bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <h2 className="text-lg font-bold text-emerald-800 dark:text-emerald-400">Ready / Expedite</h2>
+              <span className="bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 px-2 py-1 rounded-full text-xs font-semibold tabular-nums">{readyRounds.length}</span>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto space-y-4 pb-12 pr-2 scrollbar-thin">
+              {readyRounds.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-emerald-700/50 border-2 border-emerald-500/20 border-dashed rounded-xl">
+                  <p className="text-sm">No tickets ready</p>
+                </div>
+              ) : (
+                readyRounds.map((round) => (
+                  <KitchenTicket
+                    key={round.id}
+                    round={round}
+                    now={now}
+                    column="READY"
+                    marking={false}
+                  />
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
-
-      {readyRounds.length > 0 && (
-        <section className="mt-2">
-          <h2 className="text-muted-foreground mb-2 text-sm font-medium">
-            Ready, waiting to be served
-          </h2>
-          <ul className="flex flex-wrap gap-2">
-            {readyRounds.map((round) => (
-              <li
-                key={round.id}
-                className="text-muted-foreground rounded-md border px-3 py-1.5 text-sm"
-              >
-                Table {round.tableNumber ?? "—"} · #{round.roundNumber}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </>
+    </div>
   )
 }

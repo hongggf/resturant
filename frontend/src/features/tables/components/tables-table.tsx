@@ -4,7 +4,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { MoreHorizontal, Pencil, QrCode, Trash2 } from "lucide-react"
+import { ExternalLink, MoreHorizontal, Pencil, QrCode, Trash2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { guestQrUrl } from "../lib/qr-url"
 import type { DiningTable } from "../types"
 
 const columnHelper = createColumnHelper<DiningTable>()
@@ -57,13 +58,25 @@ export function TablesTable({
       id: "qr",
       header: () => <span className="sr-only">QR code</span>,
       cell: ({ row }) => (
-        <div className="text-right">
+        <div className="flex items-center justify-end gap-2 text-right">
+          {row.original.qrToken && (
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href={guestQrUrl(row.original.qrToken)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="size-4" />
+                Guest Menu
+              </a>
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
             onClick={() => onShowQr(row.original)}
           >
-            <QrCode />
+            <QrCode className="size-4" />
             Show QR
           </Button>
         </div>
