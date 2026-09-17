@@ -35,7 +35,7 @@ export function useCreatePromo() {
       dto: GuestPromoDto
       image?: File
     }) => {
-      let finalDto = { ...dto }
+      const finalDto = { ...dto }
       if (image) {
         const { url } = await uploadImage(image)
         finalDto.imageUrl = url
@@ -62,7 +62,7 @@ export function useUpdatePromo() {
       dto: GuestPromoDto
       image?: File
     }) => {
-      let finalDto = { ...dto }
+      const finalDto = { ...dto }
       if (image) {
         const { url } = await uploadImage(image)
         finalDto.imageUrl = url

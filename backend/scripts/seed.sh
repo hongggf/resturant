@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Seed the Restaurant POS API with Kaixin Malatang test data.
+# Seed the Restaurant POS API with Malatang POS test data.
 # Usage: ./scripts/seed.sh  (app must be running on localhost:8080)
 set -euo pipefail
 
@@ -78,10 +78,11 @@ options() {
         }]'
 }
 
-category() { # category <nameEn> <sortOrder> [description]
+category() { # category <nameEn> <sortOrder> [description] [allowNotes]
+    local allow_notes="${4:-true}"
     local res
-    res=$(post /api/v1/categories "$(jq -n --arg n "$1" --argjson s "$2" --arg d "${3:-}" \
-        '{nameEn: $n, nameKm: $n, description: $d, sortOrder: $s, active: true}')")
+    res=$(post /api/v1/categories "$(jq -n --arg n "$1" --argjson s "$2" --arg d "${3:-}" --argjson an "$allow_notes" \
+        '{nameEn: $n, nameKm: $n, description: $d, sortOrder: $s, active: true, allowNotes: $an}')")
     echo "  ✓ category  $1" >&2
     id_of "$res"
 }
@@ -133,9 +134,9 @@ echo "  ✓ logged in as $ADMIN_USER"
 echo "== Categories =="
 CAT_DIY=$(category "DIY Malatang" 1 "Build your own Malatang")
 CAT_SIDE=$(category "Side Dishes" 2)
-CAT_DRINK=$(category "Kaixin Love Drink" 3)
-CAT_SOFT=$(category "I Love Soft Drinks" 4)
-CAT_CANDY=$(category "I Love Candy" 5)
+CAT_DRINK=$(category "Special Love Drink" 3)
+CAT_SOFT=$(category "I Love Soft Drinks" 4 "" false)
+CAT_CANDY=$(category "I Love Candy" 5 "" false)
 CAT_COMBO=$(category "Combo Set" 6)
 
 # --- 2. modifier groups ------------------------------------------------------
@@ -156,10 +157,10 @@ GRP_MEAT=$(modifier_group "Meat" 0 10 "$(options 0.90 \
     "Tender Chicken" "USA Beef" "Black Chicken" "White Stomach")")
 
 GRP_MEATBALL=$(modifier_group "Meat Ball" 0 15 "$(options 0.30 \
-    "Juicy Beef Ball (2pcs)" "Mini Juicy Fish Ball" "Fish Roe Meatball" "Mini Dumplings" \
+    "Juicy Beef Ball (2pcs)" "Mini Juicy Fish Ball" "Fish Roe Meatball" \
     "Crab Stick" "Duck Blood" "Potato Noodles" \
-    "Bacon (4pcs)" "Kaixin Dumplings" \
-    "Pork Flower Sausage" "Fish Cake" "Prawn Dumplings" "Fish Roll Meatball")")
+    "Bacon (4pcs)" "Signature Dumplings" \
+    "Pork Flower Sausage" "Fish Cake" "Fish Roll Meatball")")
 
 GRP_VEGGIE=$(modifier_group "Veggie" 0 10 "$(options 0.30 \
     "Broccoli" "White Fungus" "Black Fungus" "Soft Tofu" "Bamboo Shoot" \
@@ -180,10 +181,12 @@ GRP_EXTRA=$(modifier_group "Extra Love Add-Ons" 0 3 "$(options 1.58 \
 echo "== Menu items =="
 # Free base: a build is priced entirely by the options stacked on it.
 ITEM_DIY=$(menu_item "DIY Malatang" 0.00 "$CAT_DIY" "Build your own Malatang" "diy-malatang.jpg")
-menu_item "Kaixin World Football Set" 8.99 "$CAT_COMBO" "2 Signature Malatang + Dumplings + Drink" "combo-set.jpg" >/dev/null
+menu_item "Malatang World Football Set" 8.99 "$CAT_COMBO" "2 Signature Malatang + Dumplings + Drink" "combo-set.jpg" >/dev/null
 menu_item "Half Steamed Rice" 0.35 "$CAT_SIDE" "" "steamed-rice.jpg" >/dev/null
 menu_item "Full Steamed Rice" 0.70 "$CAT_SIDE" "" "steamed-rice.jpg" >/dev/null
 menu_item "Sichuan Pork Dumplings" 1.50 "$CAT_SIDE" "" "sichuan-dumplings.jpg" >/dev/null
+menu_item "Prawn Dumplings" 1.50 "$CAT_SIDE" "" "prawn-dumplings.jpg" >/dev/null
+menu_item "Mini Dumplings" 1.50 "$CAT_SIDE" "" "mini-dumplings.jpg" >/dev/null
 menu_item "Pineapple Lemon Jasmine Tea" 1.98 "$CAT_DRINK" "" "pineapple-tea.jpg" >/dev/null
 menu_item "Red Apple Jasmine Tea" 1.98 "$CAT_DRINK" "" "apple-tea.jpg" >/dev/null
 menu_item "Honey Lemon Kiss" 1.98 "$CAT_DRINK" "" "honey-lemon.jpg" >/dev/null

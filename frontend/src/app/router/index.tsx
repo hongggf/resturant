@@ -105,8 +105,13 @@ export const router = createBrowserRouter([
         path: "/cashier",
         element: <CashierLayout />,
         children: [
-          { index: true, element: withSuspense(TableBoardPage) },
-          { path: "sessions/:sessionId", element: withSuspense(SessionPage) },
+          { 
+            path: "", 
+            element: withSuspense(TableBoardPage),
+            children: [
+              { path: "sessions/:sessionId", element: withSuspense(SessionPage) },
+            ]
+          },
           { path: "sessions/:sessionId/order", element: withSuspense(ManualOrderPage) },
           { path: "sessions/:sessionId/bill", element: withSuspense(BillPage) },
           { path: "sessions/:sessionId/receipt", element: withSuspense(ReceiptPage) },

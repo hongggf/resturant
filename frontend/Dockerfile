@@ -1,7 +1,11 @@
+# syntax=docker/dockerfile:1
 FROM node:24-alpine AS build
 WORKDIR /app
+
 COPY package.json package-lock.json ./
-RUN npm ci
+# Cache npm tarballs across builds using BuildKit cache mount
+RUN --mount=type=cache,target=/root/.npm npm ci
+
 COPY . .
 RUN npm run build
 

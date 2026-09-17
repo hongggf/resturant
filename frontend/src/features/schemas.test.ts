@@ -92,6 +92,7 @@ describe('Form Validation Schemas', () => {
         description: 'Flavorful base',
         sortOrder: 1,
         active: true,
+        allowNotes: true,
       })
       expect(result.success).toBe(true)
     })
@@ -103,6 +104,7 @@ describe('Form Validation Schemas', () => {
         description: '',
         sortOrder: -1,
         active: true,
+        allowNotes: true,
       })
       expect(result.success).toBe(false)
     })

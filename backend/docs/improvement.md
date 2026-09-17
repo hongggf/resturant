@@ -1,4 +1,4 @@
-# UI Decision Review — KaiXin POS
+# UI Decision Review — Malatang POS
 
 **Date:** 2026-09-11
 **Method:** Multi-agent review — 41 agents; 53 UI decisions audited across receipt, cashier terminal, kitchen, admin, and guest surfaces; 29 contested claims adversarially re-verified against the code (several overturned). All file:line references were read and confirmed.

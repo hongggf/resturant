@@ -925,6 +925,7 @@ export interface components {
             /** Format: uuid */
             categoryId?: string;
             categoryNameEn?: string;
+            categoryAllowNotes?: boolean;
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -1011,6 +1012,7 @@ export interface components {
             /** Format: int32 */
             sortOrder: number;
             active?: boolean;
+            allowNotes?: boolean;
         };
         ApiResponseCategoryResponse: {
             success?: boolean;
@@ -1028,6 +1030,7 @@ export interface components {
             /** Format: int32 */
             sortOrder?: number;
             active?: boolean;
+            allowNotes?: boolean;
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -1221,6 +1224,7 @@ export interface components {
             /** Format: int32 */
             sortOrder: number;
             active?: boolean;
+            allowNotes?: boolean;
         };
         UserCreateRequest: {
             username: string;

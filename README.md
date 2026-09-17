@@ -1,4 +1,4 @@
-# 🍽️ KaiXin Restaurant POS & QR Ordering System
+# 🍽️ Restaurant POS & QR System
 
 [![Java](https://img.shields.io/badge/Java-21%20LTS-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)

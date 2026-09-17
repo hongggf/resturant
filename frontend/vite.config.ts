@@ -8,8 +8,30 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api': 'http://localhost:8080',
-      '/uploads': 'http://localhost:8080',
+      '/api': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+        headers: {
+          Origin: 'https://vongpos.com'
+        },
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes, req) => {
+            proxyRes.headers['access-control-allow-origin'] = req.headers.origin || 'http://localhost:5173';
+          });
+        }
+      },
+      '/uploads': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+        headers: {
+          Origin: 'https://vongpos.com'
+        },
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes, req) => {
+            proxyRes.headers['access-control-allow-origin'] = req.headers.origin || 'http://localhost:5173';
+          });
+        }
+      }
     },
   },
   resolve: {
