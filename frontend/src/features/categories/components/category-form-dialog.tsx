@@ -38,6 +38,7 @@ function toValues(category?: Category): CategoryValues {
     description: category?.description ?? "",
     sortOrder: category?.sortOrder ?? 0,
     active: category?.active ?? true,
+    allowNotes: category?.allowNotes ?? true,
   }
 }
 
@@ -114,27 +115,47 @@ export function CategoryFormDialog({
               />
               <FieldError errors={[errors.description]} />
             </Field>
+            <Field data-invalid={!!errors.sortOrder}>
+              <FieldLabel htmlFor="sortOrder">Sort order</FieldLabel>
+              <Input
+                id="sortOrder"
+                type="number"
+                min={0}
+                aria-invalid={!!errors.sortOrder}
+                {...form.register("sortOrder", { valueAsNumber: true })}
+              />
+              <FieldError errors={[errors.sortOrder]} />
+            </Field>
             <div className="flex gap-4">
-              <Field className="flex-1" data-invalid={!!errors.sortOrder}>
-                <FieldLabel htmlFor="sortOrder">Sort order</FieldLabel>
-                <Input
-                  id="sortOrder"
-                  type="number"
-                  min={0}
-                  aria-invalid={!!errors.sortOrder}
-                  {...form.register("sortOrder", { valueAsNumber: true })}
-                />
-                <FieldError errors={[errors.sortOrder]} />
+              <Field className="flex-1">
+                <FieldLabel htmlFor="allowNotes">Special instructions</FieldLabel>
+                <div className="flex items-center gap-2 pt-1">
+                  <Switch
+                    id="allowNotes"
+                    checked={form.watch("allowNotes")}
+                    onCheckedChange={(checked) =>
+                      form.setValue("allowNotes", checked)
+                    }
+                  />
+                  <span className="text-muted-foreground text-xs">
+                    {form.watch("allowNotes") ? "Allowed" : "Disabled"}
+                  </span>
+                </div>
               </Field>
               <Field className="flex-1">
                 <FieldLabel htmlFor="active">Active</FieldLabel>
-                <Switch
-                  id="active"
-                  checked={form.watch("active")}
-                  onCheckedChange={(checked) =>
-                    form.setValue("active", checked)
-                  }
-                />
+                <div className="flex items-center gap-2 pt-1">
+                  <Switch
+                    id="active"
+                    checked={form.watch("active")}
+                    onCheckedChange={(checked) =>
+                      form.setValue("active", checked)
+                    }
+                  />
+                  <span className="text-muted-foreground text-xs">
+                    {form.watch("active") ? "Visible" : "Hidden"}
+                  </span>
+                </div>
               </Field>
             </div>
             <DialogFooter>

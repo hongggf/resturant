@@ -62,7 +62,7 @@ export function useCreateMenuItem() {
       body: MenuItemCreateRequest & { imageUrl?: string | null }
       image?: File
     }) => {
-      let finalBody = { ...body }
+      const finalBody = { ...body }
       if (image) {
         const { url } = await uploadImage(image)
         finalBody.imageUrl = url
@@ -89,7 +89,7 @@ export function useUpdateMenuItem() {
       body: MenuItemUpdateRequest & { imageUrl?: string | null }
       image?: File
     }) => {
-      let finalBody = { ...body }
+      const finalBody = { ...body }
       if (image) {
         const { url } = await uploadImage(image)
         finalBody.imageUrl = url

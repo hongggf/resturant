@@ -47,6 +47,11 @@ export function ItemConfigDialog({
   const [remark, setRemark] = useState("")
   const [selected, setSelected] = useState<Record<string, DraftSelection>>({})
 
+  const isDrink = /drink|beverage|tea|water|cola|coffee|juice|soda/i.test(
+    `${item.categoryNameEn ?? ""} ${item.nameEn}`
+  )
+  const allowNotes = item.categoryAllowNotes !== false
+
   const groups = (data ?? [])
     .filter((attached) => attached.group?.active !== false)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
@@ -284,19 +289,25 @@ export function ItemConfigDialog({
             })
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="order-remark" className="text-sm font-medium">
-              Note for the kitchen
-            </Label>
-            <Textarea
-              id="order-remark"
-              value={remark}
-              maxLength={200}
-              rows={2}
-              placeholder="e.g. No onions, sauce on the side…"
-              onChange={(event) => setRemark(event.target.value)}
-            />
-          </div>
+          {allowNotes && (
+            <div className="space-y-2">
+              <Label htmlFor="order-remark" className="text-sm font-medium">
+                Special instructions (optional)
+              </Label>
+              <Textarea
+                id="order-remark"
+                value={remark}
+                maxLength={200}
+                rows={2}
+                placeholder={
+                  isDrink
+                    ? "e.g. Less ice, no ice, cold can…"
+                    : "e.g. No onions, sauce on the side…"
+                }
+                onChange={(event) => setRemark(event.target.value)}
+              />
+            </div>
+          )}
         </div>
 
         {belowMinimum && (

@@ -20,11 +20,11 @@ export function listMenuItems({
   categoryId,
   available,
 }: MenuItemListParams) {
-  const query = new URLSearchParams({
-    page: String(page),
-    size: String(size),
-    sort: "nameEn,asc",
-  })
+  const query = new URLSearchParams()
+  query.append("page", String(page))
+  query.append("size", String(size))
+  query.append("sort", "category.sortOrder,asc")
+  query.append("sort", "nameEn,asc")
   if (categoryId) query.set("categoryId", categoryId)
   if (available !== undefined) query.set("available", String(available))
   return apiFetch<MenuItemPage>(`/menu-items?${query}`)

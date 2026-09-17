@@ -59,6 +59,15 @@ export function CategoriesTable({
         </span>
       ),
     }),
+    columnHelper.accessor("allowNotes", {
+      header: "Instructions",
+      cell: (info) =>
+        info.getValue() !== false ? (
+          <Badge variant="outline" className="text-xs font-normal">Allowed</Badge>
+        ) : (
+          <Badge variant="secondary" className="text-muted-foreground text-xs font-normal">Off</Badge>
+        ),
+    }),
     columnHelper.accessor("active", {
       header: "Status",
       cell: (info) =>

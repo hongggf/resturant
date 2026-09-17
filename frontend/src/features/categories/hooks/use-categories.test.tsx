@@ -46,6 +46,7 @@ describe('use-categories', () => {
     description: 'Refreshing drinks',
     sortOrder: 1,
     active: true,
+    allowNotes: true,
   }
 
   describe('useCategories', () => {
@@ -68,7 +69,7 @@ describe('use-categories', () => {
       vi.mocked(categoriesApi.createCategory).mockResolvedValue(mockCategory)
 
       const { result } = renderHook(() => useCreateCategory(), { wrapper: createWrapper() })
-      result.current.mutate({ nameEn: 'Drinks', nameKm: 'ភេសជ្ជៈ', sortOrder: 1, active: true })
+      result.current.mutate({ nameEn: 'Drinks', nameKm: 'ភេសជ្ជៈ', sortOrder: 1, active: true, allowNotes: true })
       
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
       
@@ -80,7 +81,7 @@ describe('use-categories', () => {
       vi.mocked(categoriesApi.createCategory).mockRejectedValue(new ApiError('Failed to create', 400))
 
       const { result } = renderHook(() => useCreateCategory(), { wrapper: createWrapper() })
-      result.current.mutate({ nameEn: 'Drinks', nameKm: 'ភេសជ្ជៈ', sortOrder: 1, active: true })
+      result.current.mutate({ nameEn: 'Drinks', nameKm: 'ភេសជ្ជៈ', sortOrder: 1, active: true, allowNotes: true })
       
       await waitFor(() => expect(result.current.isError).toBe(true))
       
@@ -93,7 +94,7 @@ describe('use-categories', () => {
       vi.mocked(categoriesApi.updateCategory).mockResolvedValue(mockCategory)
 
       const { result } = renderHook(() => useUpdateCategory(), { wrapper: createWrapper() })
-      result.current.mutate({ id: '1', nameEn: 'Drinks', nameKm: 'ភេសជ្ជៈ', sortOrder: 1, active: true })
+      result.current.mutate({ id: '1', nameEn: 'Drinks', nameKm: 'ភេសជ្ជៈ', sortOrder: 1, active: true, allowNotes: true })
       
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
       
