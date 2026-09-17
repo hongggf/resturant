@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { GuestItemDialog } from './guest-item-dialog'
+import { LanguageProvider } from '@/lib/language-context'
 import type { GuestMenuItemDetail, MenuItem } from '../types'
 import type { GuestSessionState } from '../lib/session-store'
 
@@ -117,6 +118,19 @@ describe('<GuestItemDialog />', () => {
     expect(screen.getByText('Extra Beef')).toBeInTheDocument()
   })
 
+  it('renders Khmer title on top and English name on bottom when language is Khmer', () => {
+    localStorage.setItem('vongpos_guest_language', 'km')
+    render(
+      <LanguageProvider>
+        <GuestItemDialog item={mockItem} onOpenChange={mockOnOpenChange} />
+      </LanguageProvider>
+    )
+
+    expect(screen.getByRole('heading', { name: 'ស៊ុបម៉ាឡាថាំង' })).toBeInTheDocument()
+    expect(screen.getByText(/\$5\.00 · Beef Malatang/)).toBeInTheDocument()
+    localStorage.removeItem('vongpos_guest_language')
+  })
+
   it('shows loading spinner when menu item detail is pending', () => {
     mockDetailPending = true
     mockDetailData = null
@@ -213,7 +227,7 @@ describe('<GuestItemDialog />', () => {
     await user.click(screen.getByRole('button', { name: /more extra beef/i }))
 
     // Type remark
-    const remarkInput = screen.getByLabelText(/note for the kitchen/i)
+    const remarkInput = screen.getByLabelText(/special instructions/i)
     await user.type(remarkInput, 'No scallions')
 
     // Click Add button ($5.00 + $0.50 + $2.00 = $7.50)
@@ -237,6 +251,27 @@ describe('<GuestItemDialog />', () => {
     )
 
     expect(mockOnOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it('hides special instructions when category does not allow notes', () => {
+    const itemWithoutNotes: MenuItem = {
+      ...mockItem,
+      categoryAllowNotes: false,
+    }
+    render(<GuestItemDialog item={itemWithoutNotes} onOpenChange={mockOnOpenChange} />)
+    expect(screen.queryByLabelText(/special instructions/i)).not.toBeInTheDocument()
+  })
+
+  it('shows beverage placeholder for drinks with notes enabled', () => {
+    const drinkItem: MenuItem = {
+      ...mockItem,
+      nameEn: 'Coca-Cola Classic',
+      categoryNameEn: 'I Love Soft Drinks',
+      categoryAllowNotes: true,
+    }
+    render(<GuestItemDialog item={drinkItem} onOpenChange={mockOnOpenChange} />)
+    const input = screen.getByLabelText(/special instructions/i)
+    expect(input).toHaveAttribute('placeholder', expect.stringMatching(/less ice|cold can/i))
   })
 
   it('disables add button when session status is spent', async () => {

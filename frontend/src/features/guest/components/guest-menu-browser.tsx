@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, ImageOff, UtensilsCrossed } from "lucide-react"
+import { ChevronLeft, ChevronRight, ImageOff, UtensilsCrossed, X } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { resolveItemImage } from "@/features/menu/lib/food-image"
 import { formatPrice } from "@/lib/format"
+import { useLanguage } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
 import { useGuestCategories, useGuestMenuItems } from "../hooks/use-guest-menu"
 import type { MenuItem } from "../types"
@@ -39,18 +40,32 @@ function PromoPopup() {
 
   return (
     <Dialog open={showPromo} onOpenChange={setShowPromo}>
-      <DialogContent className="max-w-sm rounded-xl p-0 overflow-hidden bg-card">
-        {promo.imageUrl && (
-          <img src={assetUrl(resolveItemImage(undefined, promo.imageUrl, "hero") || promo.imageUrl) || ""} className="w-full aspect-[4/3] object-cover" alt="" />
-        )}
-        <div className="p-6 pt-4 space-y-4">
-          <DialogHeader className="text-left space-y-2">
-            <DialogTitle className="text-xl font-bold">{promo.title}</DialogTitle>
-            <DialogDescription className="text-base text-foreground/80">{promo.description}</DialogDescription>
+      <DialogContent showCloseButton={false} className="max-w-sm border-0 p-0 overflow-hidden bg-transparent shadow-none">
+        <div className="relative overflow-hidden rounded-3xl bg-background shadow-2xl ring-1 ring-black/5">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{promo.title}</DialogTitle>
+            <DialogDescription>{promo.description}</DialogDescription>
           </DialogHeader>
-          <Button className="w-full h-12 text-lg rounded-xl mt-4" onClick={() => setShowPromo(false)}>
-            Got it
-          </Button>
+
+          {promo.imageUrl && (
+            <div className="relative aspect-[2/3] w-full">
+              <img
+                src={assetUrl(resolveItemImage(undefined, promo.imageUrl, "hero") || promo.imageUrl) || ""}
+                className="absolute inset-0 h-full w-full object-cover"
+                alt={promo.title || "Promotion"}
+              />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background/40 to-transparent" />
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowPromo(false)}
+            className="absolute right-3 top-3 z-10 rounded-full bg-black/40 p-2 text-white shadow-md backdrop-blur-md transition-colors hover:bg-black/60 active:scale-95"
+          >
+            <X className="size-5" />
+            <span className="sr-only">Close</span>
+          </button>
         </div>
       </DialogContent>
     </Dialog>
@@ -66,6 +81,8 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
     page,
     categoryId,
   })
+  const { language, t } = useLanguage()
+  const isKhmer = language === "km"
 
   const items = data?.content ?? []
   const totalPages = data?.totalPages ?? 0
@@ -85,7 +102,7 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
           className="h-8 px-4 text-sm"
         >
           <button type="button" onClick={() => pickCategory(undefined)}>
-            All
+            {t("all")}
           </button>
         </Badge>
         {categories.data?.map((category) => (
@@ -96,13 +113,15 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
             className="h-8 px-4 text-sm"
           >
             <button type="button" onClick={() => pickCategory(category.id)}>
-              {category.nameEn}
+              {isKhmer ? (category.nameKm || category.nameEn) : category.nameEn}
             </button>
           </Badge>
         ))}
       </div>
 
-      <div className="text-muted-foreground text-right text-xs">Prices shown before VAT</div>
+      <div className="text-muted-foreground text-right text-xs">
+        {t("pricesBeforeVat")}
+      </div>
 
       {isPending ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -131,9 +150,9 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
             <EmptyMedia variant="icon">
               <UtensilsCrossed />
             </EmptyMedia>
-            <EmptyTitle>Nothing available here</EmptyTitle>
+            <EmptyTitle>{t("nothingAvailable")}</EmptyTitle>
             <EmptyDescription>
-              No available menu items in this category.
+              {t("noAvailableItems")}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -141,6 +160,8 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {items.map((item) => {
             const image = resolveItemImage(item.nameEn, item.imageUrl, "card")
+            const primaryName = isKhmer ? (item.nameKm || item.nameEn) : item.nameEn
+            const secondaryName = isKhmer ? item.nameEn : item.nameKm
             return (
               <button
                 key={item.id}
@@ -168,14 +189,19 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
                   )}
                   {!item.available && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-[1px]">
-                      <Badge variant="destructive" className="font-semibold pointer-events-none">Sold out / អស់</Badge>
+                      <Badge variant="destructive" className="font-semibold pointer-events-none">{t("soldOut")}</Badge>
                     </div>
                   )}
                 </div>
                 <div className="flex flex-1 flex-col gap-0.5 p-2">
                   <span className="line-clamp-2 text-sm font-medium">
-                    {item.nameEn}
+                    {primaryName}
                   </span>
+                  {secondaryName && (
+                    <span className="text-muted-foreground line-clamp-1 text-xs">
+                      {secondaryName}
+                    </span>
+                  )}
                   <span className="text-muted-foreground mt-auto text-sm tabular-nums">
                     {formatPrice(item.price, item.currencyCode)}
                   </span>
@@ -195,7 +221,7 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
             onClick={() => setPage((p) => p - 1)}
           >
             <ChevronLeft />
-            Previous
+            {t("previous")}
           </Button>
           <span className="text-muted-foreground text-sm tabular-nums">
             {page + 1} / {totalPages}
@@ -206,7 +232,7 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
             disabled={page + 1 >= totalPages}
             onClick={() => setPage((p) => p + 1)}
           >
-            Next
+            {t("next")}
             <ChevronRight />
           </Button>
         </div>

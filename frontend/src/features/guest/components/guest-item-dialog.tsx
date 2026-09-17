@@ -23,10 +23,10 @@ import { cn } from "@/lib/utils"
 import { useGuestMenuItemDetail } from "../hooks/use-guest-menu"
 import { useAddCartLine, useUpdateCartLine } from "../hooks/use-guest-cart"
 import { useGuestSession } from "../hooks/use-guest-session"
+import { useLanguage } from "@/lib/language-context"
 import {
   BUILD_MINIMUM,
   buildMinimumProgress,
-  formatGroupList,
 } from "@/features/modifiers/lib/build-minimum"
 import type { CartLine, MenuItem, ModifierOption } from "../types"
 
@@ -44,11 +44,24 @@ interface GuestItemDialogProps {
 }
 
 export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialogProps) {
+  const { language, t } = useLanguage()
+  const isKhmer = language === "km"
+  const title = isKhmer ? (item.nameKm || item.nameEn) : item.nameEn
+  const subtitleName = isKhmer ? item.nameEn : item.nameKm
+  const description = isKhmer
+    ? (item.descriptionKm || item.descriptionEn)
+    : (item.descriptionEn || item.descriptionKm)
+
   const { data, isPending, isError } = useGuestMenuItemDetail(item.id)
   const addLine = useAddCartLine()
   const updateLine = useUpdateCartLine()
   const session = useGuestSession()
   const spent = session.status === "spent"
+
+  const isDrink = /drink|beverage|tea|water|cola|coffee|juice|soda/i.test(
+    `${data?.item?.categoryNameEn ?? item.categoryNameEn ?? ""} ${item.nameEn}`
+  )
+  const allowNotes = (data?.item?.categoryAllowNotes ?? item.categoryAllowNotes) !== false
 
   const [quantity, setQuantity] = useState(editLine?.quantity ?? 1)
   const [remark, setRemark] = useState(editLine?.remark ?? "")
@@ -137,6 +150,7 @@ export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialo
   // can be ordered; flavour alone is free.
   const minimum = buildMinimumProgress(groups, selected)
   const belowMinimum = minimum.applies && minimum.shortfall > 0
+  const isDiy = minimum.applies || /diy|malatang/i.test(item.nameEn ?? "") || /diy|malatang/i.test(item.categoryNameEn ?? "")
 
   const selections = Object.values(selected)
   const unitPrice =
@@ -185,26 +199,63 @@ export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialo
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85svh] flex-col overflow-hidden p-0">
-        {heroImage && (
-          <div className="relative aspect-[16/7] w-full shrink-0 overflow-hidden bg-muted">
+      <DialogContent
+        className={cn(
+          "flex flex-col overflow-hidden p-0",
+          isDiy
+            ? "max-h-[92svh] min-h-[55svh] max-w-full top-auto bottom-0 translate-y-0 rounded-b-none data-[state=open]:zoom-in-100 data-[state=closed]:zoom-out-100 data-[state=open]:slide-in-from-bottom-full data-[state=closed]:slide-out-to-bottom-full sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:slide-out-to-bottom-0 sm:top-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:max-w-2xl sm:h-[90svh]"
+            : "max-h-[85svh] sm:max-h-[90svh] sm:max-w-lg"
+        )}
+      >
+        {heroImage && !isDiy && (
+          <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-muted">
             <img src={heroImage} alt={item.nameEn} className="size-full object-cover" />
           </div>
         )}
-        <div className="p-6 pt-4 pb-0">
-          <DialogHeader>
-            <DialogTitle>{item.nameEn}</DialogTitle>
-            <DialogDescription>
-              {formatPrice(item.price, item.currencyCode)}
-              {item.nameKm ? ` · ${item.nameKm}` : ""}
-            </DialogDescription>
-          </DialogHeader>
-        </div>
+        {!isDiy && (
+          <div className="p-6 pt-4 pb-0">
+            <DialogHeader>
+              <DialogTitle>{title}</DialogTitle>
+              <DialogDescription>
+                {formatPrice(item.price, item.currencyCode)}
+                {subtitleName ? ` · ${subtitleName}` : ""}
+              </DialogDescription>
+              {description && (
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {description}
+                </p>
+              )}
+            </DialogHeader>
+          </div>
+        )}
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-2">
+          {isDiy && (
+            <>
+              {heroImage && (
+                <div className="relative aspect-[4/3] -mx-6 -mt-2 mb-4 shrink-0 overflow-hidden bg-muted">
+                  <img src={heroImage} alt={item.nameEn} className="size-full object-cover" />
+                </div>
+              )}
+              <DialogHeader className="mb-4">
+                <DialogTitle>{title}</DialogTitle>
+                <DialogDescription>
+                  {formatPrice(item.price, item.currencyCode)}
+                  {subtitleName ? ` · ${subtitleName}` : ""}
+                </DialogDescription>
+                {description && (
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    {description}
+                  </p>
+                )}
+              </DialogHeader>
+            </>
+          )}
+
           {isPending ? (
-            <div className="flex justify-center py-6">
-              <Spinner />
+            <div className="flex flex-col items-center justify-center min-h-[200px] text-muted-foreground gap-3">
+              <Spinner className="size-6" />
+              <span className="text-sm animate-pulse">Loading options...</span>
             </div>
           ) : isError ? (
             <p className="text-destructive text-sm">
@@ -222,7 +273,9 @@ export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialo
               return (
                 <div key={group.id} className="space-y-2">
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-sm font-medium">{group.nameEn}</p>
+                    <p className="text-sm font-medium">
+                      {isKhmer ? (group.nameKm || group.nameEn) : group.nameEn}
+                    </p>
                     <p
                       className={cn(
                         "text-muted-foreground text-xs",
@@ -239,6 +292,9 @@ export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialo
                       const qty = selected[option.id!]?.quantity ?? 0
                       const price = option.unitPrice ?? 0
                       const optionImg = resolveItemImage(option.nameEn, option.imageUrl, "thumb")
+                      const optionDisplayName = isKhmer
+                        ? (option.nameKm || option.nameEn)
+                        : option.nameEn
                       if (single) {
                         return (
                           <Label
@@ -259,7 +315,7 @@ export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialo
                                 className="size-8 shrink-0 rounded object-cover"
                               />
                             )}
-                            <span className="flex-1 text-sm">{option.nameEn}</span>
+                            <span className="flex-1 text-sm">{optionDisplayName}</span>
                             {price > 0 && (
                               <span className="text-muted-foreground text-xs tabular-nums">
                                 +{formatPrice(price)}
@@ -283,7 +339,7 @@ export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialo
                               className="size-8 shrink-0 rounded object-cover"
                             />
                           )}
-                          <span className="flex-1 text-sm">{option.nameEn}</span>
+                          <span className="flex-1 text-sm">{optionDisplayName}</span>
                           <div className="flex items-center gap-1">
                             <Button
                               size="icon-xs"
@@ -321,37 +377,25 @@ export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialo
             })
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="guest-order-remark" className="text-sm font-medium">
-              Note for the kitchen
-            </Label>
-            <Textarea
-              id="guest-order-remark"
-              value={remark}
-              maxLength={200}
-              rows={2}
-              placeholder="e.g. No onions, sauce on the side…"
-              onChange={(event) => setRemark(event.target.value)}
-            />
-          </div>
+          {allowNotes && (
+            <div className="space-y-2">
+              <Label htmlFor="guest-order-remark" className="text-sm font-medium">
+                {t("specialInstructions")}
+              </Label>
+              <Textarea
+                id="guest-order-remark"
+                value={remark}
+                maxLength={200}
+                rows={2}
+                placeholder={isDrink ? t("drinkNotePlaceholder") : t("notePlaceholder")}
+                onChange={(event) => setRemark(event.target.value)}
+              />
+            </div>
+          )}
         </div>
 
-        {belowMinimum && (
-          <p
-            role="status"
-            className="text-muted-foreground shrink-0 border-t px-6 pt-3 text-sm"
-          >
-            Add{" "}
-            <span className="text-foreground font-medium">
-              {formatPrice(minimum.shortfall, item.currencyCode)}
-            </span>{" "}
-            more from {formatGroupList(minimum.groupNames)} to reach the{" "}
-            {formatPrice(BUILD_MINIMUM, item.currencyCode)} minimum.
-          </p>
-        )}
-
         <Separator />
-        <DialogFooter className="flex-row items-center sm:justify-between">
+        <DialogFooter className="m-0 flex-row items-center p-4 sm:p-5 sm:justify-between">
           <div className="flex items-center gap-1">
             <Button
               size="icon-sm"
@@ -387,10 +431,10 @@ export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialo
           >
             {saving ? (
               <Spinner />
-            ) : editLine ? (
-              `Save · ${formatPrice(unitPrice * quantity, item.currencyCode)}`
+            ) : belowMinimum ? (
+              `${editLine ? t("update") : t("add")} · ${formatPrice(unitPrice * quantity, item.currencyCode)} (Min ${formatPrice(BUILD_MINIMUM, item.currencyCode)})`
             ) : (
-              `Add · ${formatPrice(unitPrice * quantity, item.currencyCode)}`
+              `${editLine ? t("update") : t("add")} · ${formatPrice(unitPrice * quantity, item.currencyCode)}`
             )}
           </Button>
         </DialogFooter>
@@ -398,3 +442,4 @@ export function GuestItemDialog({ item, onOpenChange, editLine }: GuestItemDialo
     </Dialog>
   )
 }
+

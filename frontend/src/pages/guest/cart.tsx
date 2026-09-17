@@ -18,8 +18,10 @@ import { GuestCartLine } from "@/features/guest/components/guest-cart-line"
 import { useGuestCart, useSendCart } from "@/features/guest/hooks/use-guest-cart"
 import { useGuestSession } from "@/features/guest/hooks/use-guest-session"
 import { formatPercent, formatPrice } from "@/lib/format"
+import { useLanguage } from "@/lib/language-context"
 
 export function GuestCartPage() {
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const session = useGuestSession()
   const spent = session.status === "spent"
@@ -28,22 +30,22 @@ export function GuestCartPage() {
 
   const lines = cart?.lines ?? []
   // Rate is a fraction off the API and may be absent; fall back to a bare label.
-  const vatLabel = cart?.vatRate != null ? `VAT (${formatPercent(cart.vatRate)})` : "VAT"
+  const vatLabel = cart?.vatRate != null ? `${t("vat")} (${formatPercent(cart.vatRate)})` : t("vat")
 
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Your cart</h1>
+        <h1 className="text-lg font-semibold">{t("yourCart")}</h1>
         <Button variant="outline" size="sm" asChild>
-          <Link to="/guest/menu">Menu</Link>
+          <Link to="/guest/menu">{t("menu")}</Link>
         </Button>
       </div>
 
       {spent && (
         <Alert>
-          <AlertTitle>Order already sent</AlertTitle>
+          <AlertTitle>{t("orderAlreadySentTitle")}</AlertTitle>
           <AlertDescription>
-            Scan the table QR code again to start another round.
+            {t("orderAlreadySentDesc")}
           </AlertDescription>
         </Alert>
       )}
@@ -56,11 +58,11 @@ export function GuestCartPage() {
         </div>
       ) : isError ? (
         <Alert variant="destructive">
-          <AlertTitle>Couldn&apos;t load your cart</AlertTitle>
+          <AlertTitle>{t("couldntLoadCart")}</AlertTitle>
           <AlertDescription>
             <p>{error.message}</p>
             <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
-              Try again
+              {t("tryAgain")}
             </Button>
           </AlertDescription>
         </Alert>
@@ -70,9 +72,9 @@ export function GuestCartPage() {
             <EmptyMedia variant="icon">
               <ShoppingCart />
             </EmptyMedia>
-            <EmptyTitle>Your cart is empty</EmptyTitle>
+            <EmptyTitle>{t("cartEmptyTitle")}</EmptyTitle>
             <EmptyDescription>
-              Browse the menu and add items to get started.
+              {t("cartEmptyDesc")}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -93,7 +95,7 @@ export function GuestCartPage() {
 
           <div className="space-y-1 text-sm">
             <div className="text-muted-foreground flex items-baseline justify-between">
-              <span>Subtotal</span>
+              <span>{t("subtotal")}</span>
               <span className="tabular-nums">{formatPrice(cart?.subtotal)}</span>
             </div>
             <div className="text-muted-foreground flex items-baseline justify-between">
@@ -101,7 +103,7 @@ export function GuestCartPage() {
               <span className="tabular-nums">{formatPrice(cart?.vatAmount)}</span>
             </div>
             <div className="flex items-baseline justify-between font-semibold">
-              <span>Total</span>
+              <span>{t("total")}</span>
               <DualPrice usd={cart?.grandTotal} khr={cart?.grandTotalKhr} />
             </div>
           </div>
@@ -116,7 +118,7 @@ export function GuestCartPage() {
             }
           >
             {sendCart.isPending && <Spinner />}
-            {sendCart.isPending ? "Sending…" : "Send to kitchen"}
+            {sendCart.isPending ? t("sending") : t("sendToKitchen")}
           </Button>
         </>
       )}

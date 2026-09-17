@@ -59,7 +59,7 @@ describe('<GuestCartLine />', () => {
     expect(screen.getByText('Spicy Beef Noodle')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
     expect(screen.getByText('$13.00')).toBeInTheDocument()
-    expect(screen.getByText('2× Boiled Egg')).toBeInTheDocument()
+    expect(screen.getByText('2× Boiled Egg ($1.00 ea)')).toBeInTheDocument()
     expect(screen.getByText('Cilantro')).toBeInTheDocument()
     expect(screen.getByText('“Extra spicy please”')).toBeInTheDocument()
   })

@@ -3,6 +3,7 @@ import { Minus, Pencil, Plus, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { formatPrice } from "@/lib/format"
+import { useLanguage } from "@/lib/language-context"
 import { useRemoveCartLine, useUpdateCartLine } from "../hooks/use-guest-cart"
 import { GuestItemDialog } from "./guest-item-dialog"
 import type { CartLine, MenuItem } from "../types"
@@ -14,6 +15,8 @@ interface GuestCartLineProps {
 }
 
 export function GuestCartLine({ line, disabled, currencyCode }: GuestCartLineProps) {
+  const { language, t } = useLanguage()
+  const isKhmer = language === "km"
   const updateLine = useUpdateCartLine()
   const removeLine = useRemoveCartLine()
   const busy = updateLine.isPending || removeLine.isPending || disabled
@@ -52,26 +55,36 @@ export function GuestCartLine({ line, disabled, currencyCode }: GuestCartLinePro
     })
   }
 
+  const lineName = isKhmer ? (line.nameKm || line.nameEn) : line.nameEn
+
   return (
     <li className="space-y-1">
       <div className="flex items-baseline gap-2">
-        <p className="min-w-0 flex-1 text-sm font-medium">{line.nameEn}</p>
+        <p className="min-w-0 flex-1 text-sm font-medium">{lineName}</p>
         <span className="text-sm tabular-nums">{formatPrice(line.lineTotal)}</span>
       </div>
 
       {line.selections?.map((selection) => {
         const selectionQty = selection.quantity ?? 1
         const optionTotal = (selection.unitPrice ?? 0) * selectionQty
+        const optionName = isKhmer ? (selection.nameKm || selection.nameEn) : selection.nameEn
         return (
           <div
             key={selection.modifierOptionId}
             className="text-muted-foreground flex items-baseline gap-2 text-xs"
           >
             <span className="min-w-0 flex-1">
-              {selectionQty > 1 ? `${selectionQty}× ${selection.nameEn}` : selection.nameEn}
+              {selectionQty > 1 ? (
+                <>
+                  {selectionQty}× {optionName}
+                  {selection.unitPrice ? ` (${formatPrice(selection.unitPrice, currencyCode)} ea)` : ""}
+                </>
+              ) : (
+                optionName
+              )}
             </span>
             <span className="tabular-nums">
-              {optionTotal === 0 ? "Free" : formatPrice(optionTotal)}
+              {optionTotal === 0 ? t("free") : formatPrice(optionTotal, currencyCode)}
             </span>
           </div>
         )
@@ -81,7 +94,7 @@ export function GuestCartLine({ line, disabled, currencyCode }: GuestCartLinePro
           longer add up to the line total on their own. This closes the gap. */}
       {quantity > 1 && (
         <p className="text-muted-foreground text-xs tabular-nums">
-          {formatPrice(line.unitPrice)} each × {quantity}
+          {formatPrice(line.unitPrice)} {t("each")} × {quantity}
         </p>
       )}
 

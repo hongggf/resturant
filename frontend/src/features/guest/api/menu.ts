@@ -16,11 +16,11 @@ export function listGuestMenuItems({
   size,
   categoryId,
 }: GuestMenuItemListParams) {
-  const query = new URLSearchParams({
-    page: String(page),
-    size: String(size),
-    sort: "nameEn,asc",
-  })
+  const query = new URLSearchParams()
+  query.append("page", String(page))
+  query.append("size", String(size))
+  query.append("sort", "category.sortOrder,asc")
+  query.append("sort", "nameEn,asc")
   if (categoryId) query.set("categoryId", categoryId)
   return guestApiFetch<MenuItemPage>(`/guest/menu/items?${query}`)
 }

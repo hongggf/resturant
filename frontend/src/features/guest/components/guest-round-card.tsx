@@ -1,6 +1,7 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { formatPrice } from "@/lib/format"
+import { useLanguage } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
 import type { OrderRound } from "../types"
 
@@ -17,42 +18,62 @@ const timeFormat = new Intl.DateTimeFormat(undefined, {
 })
 
 export function GuestRoundCard({ round }: { round: OrderRound }) {
+  const { language, t } = useLanguage()
+  const isKhmer = language === "km"
   const status = round.status ?? "SENT"
   const cancelled = status === "CANCELLED"
+  const statusLabel = isKhmer
+    ? status === "SENT"
+      ? t("statusSent")
+      : status === "READY"
+        ? t("statusReady")
+        : status === "COMPLETED"
+          ? t("statusCompleted")
+          : status === "CANCELLED"
+            ? t("statusCancelled")
+            : status
+    : status
 
   return (
     <Card className={cn("gap-3 py-4", cancelled && "opacity-70")}>
-      <CardHeader className="flex flex-row items-center gap-2 px-4">
-        <span className="font-semibold">Round #{round.roundNumber}</span>
-        {round.sentAt && (
-          <span className="text-muted-foreground text-xs">
-            {timeFormat.format(new Date(round.sentAt))}
+      <CardHeader className="flex flex-row items-center justify-between gap-2 px-4">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">
+            {isKhmer ? `${t("round")} #${round.roundNumber}` : `Round #${round.roundNumber}`}
           </span>
-        )}
+          {round.sentAt && (
+            <span className="text-muted-foreground text-xs font-normal">
+              · {timeFormat.format(new Date(round.sentAt))}
+            </span>
+          )}
+        </div>
         <span className={cn("rounded-md px-2 py-0.5 text-xs font-medium", statusBadges[status])}>
-          {status}
+          {statusLabel}
         </span>
       </CardHeader>
       <CardContent className="px-4">
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {round.lines?.map((line) => (
             <li key={line.id} className="flex items-start gap-2">
               <div className={cn("min-w-0 flex-1", line.voided && "text-muted-foreground line-through")}>
                 <p className="text-sm font-medium">
-                  {line.quantity}× {line.nameEn}
+                  {line.quantity}× {isKhmer ? (line.nameKm || line.nameEn) : line.nameEn}
                 </p>
                 {line.selections && line.selections.length > 0 && (
-                  <p className="text-muted-foreground text-xs">
-                    {line.selections
-                      .map((s) => ((s.quantity ?? 1) > 1 ? `${s.quantity}× ${s.nameEn}` : s.nameEn))
-                      .join(" · ")}
-                  </p>
+                  <ul className="text-muted-foreground mt-1 ml-1 space-y-1 border-l-2 pl-3 text-xs">
+                    {line.selections.map((s) => (
+                      <li key={s.modifierOptionId}>
+                        {(s.quantity ?? 1) > 1 ? `${s.quantity}× ` : ""}
+                        {isKhmer ? (s.nameKm || s.nameEn) : s.nameEn}
+                      </li>
+                    ))}
+                  </ul>
                 )}
                 {line.remark && (
-                  <p className="text-muted-foreground text-xs italic">“{line.remark}”</p>
+                  <p className="text-muted-foreground mt-1 text-xs italic">“{line.remark}”</p>
                 )}
                 {line.voided && line.voidReason && (
-                  <p className="text-destructive text-xs no-underline">Voided: {line.voidReason}</p>
+                  <p className="text-destructive mt-1 text-xs no-underline">Voided: {line.voidReason}</p>
                 )}
               </div>
               <span
@@ -70,10 +91,19 @@ export function GuestRoundCard({ round }: { round: OrderRound }) {
       {!cancelled && (
         <>
           <Separator />
-          <CardFooter className="text-muted-foreground justify-end gap-4 px-4 text-xs tabular-nums">
-            <span>Subtotal {formatPrice(round.subtotal)}</span>
-            <span>VAT {formatPrice(round.vatAmount)}</span>
-            <span className="text-foreground text-sm font-medium">{formatPrice(round.grandTotal)}</span>
+          <CardFooter className="flex flex-col items-end gap-1 px-4 text-xs tabular-nums">
+            <div className="text-muted-foreground flex w-full max-w-[200px] justify-between">
+              <span>Subtotal</span>
+              <span>{formatPrice(round.subtotal)}</span>
+            </div>
+            <div className="text-muted-foreground flex w-full max-w-[200px] justify-between">
+              <span>VAT</span>
+              <span>{formatPrice(round.vatAmount)}</span>
+            </div>
+            <div className="text-foreground mt-1 flex w-full max-w-[200px] justify-between text-sm font-medium">
+              <span>Total</span>
+              <span>{formatPrice(round.grandTotal)}</span>
+            </div>
           </CardFooter>
         </>
       )}

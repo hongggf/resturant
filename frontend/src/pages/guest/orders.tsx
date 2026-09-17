@@ -17,7 +17,10 @@ import { GuestRoundCard } from "@/features/guest/components/guest-round-card"
 import { useGuestOrders } from "@/features/guest/hooks/use-guest-orders"
 import { useGuestSession } from "@/features/guest/hooks/use-guest-session"
 
+import { useLanguage } from "@/lib/language-context"
+
 export function GuestOrdersPage() {
+  const { t } = useLanguage()
   const session = useGuestSession()
   const spent = session.status === "spent"
   const { data, isPending, isError, error, refetch } = useGuestOrders()
@@ -27,17 +30,17 @@ export function GuestOrdersPage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Your ordered items</h1>
+        <h1 className="text-lg font-semibold">{t("yourOrders")}</h1>
         <Button variant="outline" size="sm" asChild>
-          <Link to="/guest/menu">Menu</Link>
+          <Link to="/guest/menu">{t("menu")}</Link>
         </Button>
       </div>
 
       {spent && (
         <Alert>
-          <AlertTitle>Order sent</AlertTitle>
+          <AlertTitle>{t("orderSentTitle")}</AlertTitle>
           <AlertDescription>
-            Scan the table QR code again to order more.
+            {t("orderSentDesc")}
           </AlertDescription>
         </Alert>
       )}
@@ -50,11 +53,11 @@ export function GuestOrdersPage() {
         </div>
       ) : isError ? (
         <Alert variant="destructive">
-          <AlertTitle>Couldn&apos;t load your orders</AlertTitle>
+          <AlertTitle>{t("couldntLoadOrders")}</AlertTitle>
           <AlertDescription>
             <p>{error.message}</p>
             <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
-              Try again
+              {t("tryAgain")}
             </Button>
           </AlertDescription>
         </Alert>
@@ -64,9 +67,9 @@ export function GuestOrdersPage() {
             <EmptyMedia variant="icon">
               <ReceiptText />
             </EmptyMedia>
-            <EmptyTitle>Nothing ordered yet</EmptyTitle>
+            <EmptyTitle>{t("nothingOrderedTitle")}</EmptyTitle>
             <EmptyDescription>
-              Items you send to the kitchen will appear here.
+              {t("nothingOrderedDesc")}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -81,7 +84,7 @@ export function GuestOrdersPage() {
           <Separator />
 
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Running total</span>
+            <span className="text-muted-foreground text-sm">{t("runningTotal")}</span>
             <DualPrice
               usd={data?.runningGrandTotal}
               khr={data?.runningGrandTotalKhr}
