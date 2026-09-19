@@ -20,7 +20,8 @@ public class OrderRoundMapper {
         return new OrderRoundResponse(
                 round.getId(),
                 round.getRoundNumber(),
-                round.getStatus(),
+                round.getPaymentStatus(),
+                round.getFulfillmentStatus(),
                 round.getSubtotal(),
                 round.getVatRate(),
                 round.getVatAmount(),
@@ -36,7 +37,8 @@ public class OrderRoundMapper {
                 round.getSession().getId(),
                 round.getSession().getTable().getTableNumber(),
                 round.getRoundNumber(),
-                round.getStatus(),
+                round.getPaymentStatus(),
+                round.getFulfillmentStatus(),
                 round.getSubtotal(),
                 round.getVatRate(),
                 round.getVatAmount(),
@@ -61,6 +63,8 @@ public class OrderRoundMapper {
                 line.getRemark(),
                 line.isVoided(),
                 line.getVoidReason(),
+                line.getStatus(),
+                line.getStation(),
                 line.getSelections().stream().map(this::toSelectionResponse).toList()
         );
     }

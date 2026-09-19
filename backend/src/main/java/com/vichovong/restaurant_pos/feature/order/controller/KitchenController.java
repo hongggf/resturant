@@ -2,7 +2,6 @@ package com.vichovong.restaurant_pos.feature.order.controller;
 
 import com.vichovong.restaurant_pos.common.dto.ApiResponse;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundResponse;
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
 import com.vichovong.restaurant_pos.feature.order.service.CashierRoundService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -39,14 +38,41 @@ public class KitchenController {
     /** FIFO cook queue, oldest first. Defaults to SENT — what still needs cooking. */
     @GetMapping("/rounds")
     public ResponseEntity<ApiResponse<List<CashierRoundResponse>>> getQueue(
-            @RequestParam(defaultValue = "SENT") RoundStatus status) {
-        return ResponseEntity.ok(ApiResponse.success(cashierRoundService.getQueue(status)));
+            @RequestParam(defaultValue = "SENT") List<com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus> lineStatus,
+            @RequestParam(defaultValue = "KITCHEN") com.vichovong.restaurant_pos.feature.menu.entity.StationType station) {
+        return ResponseEntity.ok(ApiResponse.success(cashierRoundService.getKitchenQueue(lineStatus, station)));
     }
 
-    /** SENT -> READY. Rejects any other current status with 409. */
+    @PutMapping("/rounds/{id}/start-cooking")
+    public ResponseEntity<ApiResponse<CashierRoundResponse>> startCooking(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "KITCHEN") com.vichovong.restaurant_pos.feature.menu.entity.StationType station) {
+        return ResponseEntity.ok(ApiResponse.success("Round started cooking",
+                cashierRoundService.startCooking(id, station)));
+    }
+
     @PutMapping("/rounds/{id}/ready")
-    public ResponseEntity<ApiResponse<CashierRoundResponse>> markReady(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<CashierRoundResponse>> markReady(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "KITCHEN") com.vichovong.restaurant_pos.feature.menu.entity.StationType station) {
         return ResponseEntity.ok(ApiResponse.success("Round marked ready",
-                cashierRoundService.markReady(id)));
+                cashierRoundService.markReady(id, station)));
+    }
+
+    @PutMapping("/rounds/{id}/bump")
+    public ResponseEntity<ApiResponse<CashierRoundResponse>> bump(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "KITCHEN") com.vichovong.restaurant_pos.feature.menu.entity.StationType station) {
+        return ResponseEntity.ok(ApiResponse.success("Round bumped",
+                cashierRoundService.bump(id, station)));
+    }
+
+    @PutMapping("/rounds/{id}/lines/{lineId}/status")
+    public ResponseEntity<ApiResponse<CashierRoundResponse>> updateLineStatus(
+            @PathVariable UUID id,
+            @PathVariable UUID lineId,
+            @RequestParam com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus status) {
+        return ResponseEntity.ok(ApiResponse.success("Line status updated",
+                cashierRoundService.updateLineStatus(id, lineId, status)));
     }
 }

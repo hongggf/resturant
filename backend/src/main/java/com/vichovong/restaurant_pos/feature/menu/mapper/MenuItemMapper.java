@@ -24,6 +24,7 @@ public interface MenuItemMapper {
                 menuItem.getCategory().getId(),
                 menuItem.getCategory().getNameEn(),
                 menuItem.getCategory() == null || menuItem.getCategory().isAllowNotes(),
+                menuItem.getStation(),
                 menuItem.getCreatedAt(),
                 menuItem.getUpdatedAt()
         );

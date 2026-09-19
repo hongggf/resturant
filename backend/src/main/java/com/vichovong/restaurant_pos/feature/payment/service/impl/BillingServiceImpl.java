@@ -42,7 +42,7 @@ public class BillingServiceImpl implements BillingService {
     public BillResponse buildBill(TableSession session) {
         List<OrderRound> rounds = orderRoundRepository
                 .findBySessionIdOrderByRoundNumberAsc(session.getId()).stream()
-                .filter(r -> r.getStatus() != RoundStatus.CANCELLED)
+                .filter(r -> r.getFulfillmentStatus() != com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.CANCELLED)
                 .toList();
 
         BigDecimal subtotal = sum(rounds, OrderRound::getSubtotal);
@@ -90,7 +90,7 @@ public class BillingServiceImpl implements BillingService {
     private OrderRoundResponse toBillRound(OrderRound round) {
         OrderRoundResponse full = orderRoundMapper.toRoundResponse(round);
         return new OrderRoundResponse(
-                full.id(), full.roundNumber(), full.status(),
+                full.id(), full.roundNumber(), full.paymentStatus(), full.fulfillmentStatus(),
                 full.subtotal(), full.vatRate(), full.vatAmount(), full.grandTotal(),
                 full.sentAt(),
                 full.lines().stream().filter(l -> !l.voided()).toList()

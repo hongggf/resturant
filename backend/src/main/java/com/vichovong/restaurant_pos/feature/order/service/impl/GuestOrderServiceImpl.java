@@ -101,7 +101,7 @@ public class GuestOrderServiceImpl implements GuestOrderService {
         List<OrderRound> rounds = orderRoundRepository.findBySessionIdOrderByRoundNumberAsc(session.getId());
 
         BigDecimal runningGrandTotal = rounds.stream()
-                .filter(r -> r.getStatus() != RoundStatus.CANCELLED)
+                .filter(r -> r.getFulfillmentStatus() != com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.CANCELLED)
                 .map(OrderRound::getGrandTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

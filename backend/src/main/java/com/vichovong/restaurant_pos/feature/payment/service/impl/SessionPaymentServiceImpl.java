@@ -66,7 +66,7 @@ public class SessionPaymentServiceImpl implements SessionPaymentService {
 
         List<OrderRound> billableRounds = orderRoundRepository
                 .findBySessionIdOrderByRoundNumberAsc(sessionId).stream()
-                .filter(r -> r.getStatus() != RoundStatus.CANCELLED)
+                .filter(r -> r.getFulfillmentStatus() != com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.CANCELLED)
                 .toList();
         BigDecimal billTotal = billableRounds.stream()
                 .map(OrderRound::getGrandTotal)
@@ -82,7 +82,7 @@ public class SessionPaymentServiceImpl implements SessionPaymentService {
         // One transaction (cashier spec §6): rounds complete, session closes,
         // the table derives back to IDLE, guest tokens get 410 from now on
         Instant now = Instant.now();
-        billableRounds.forEach(round -> round.setStatus(RoundStatus.COMPLETED));
+        billableRounds.forEach(round -> round.setPaymentStatus(com.vichovong.restaurant_pos.feature.order.entity.PaymentStatus.PAID));
         session.setStatus(SessionStatus.CLOSED);
         session.setClosedAt(now);
 

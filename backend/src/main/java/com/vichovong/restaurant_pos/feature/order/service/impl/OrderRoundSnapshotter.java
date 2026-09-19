@@ -35,7 +35,8 @@ public class OrderRoundSnapshotter {
         round.setSession(session);
         round.setRoundNumber(roundNumber);
         round.setDeviceId(deviceId);
-        round.setStatus(RoundStatus.SENT);
+        round.setPaymentStatus(com.vichovong.restaurant_pos.feature.order.entity.PaymentStatus.UNPAID);
+        round.setFulfillmentStatus(com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.NEW);
         round.setSubtotal(priced.subtotal());
         round.setVatRate(priced.vatRate());
         round.setVatAmount(priced.vatAmount());
@@ -56,6 +57,9 @@ public class OrderRoundSnapshotter {
             line.setQuantity(pricedLine.quantity());
             line.setLineTotal(pricedLine.lineTotal());
             line.setRemark(pricedLine.remark());
+            if (cartLine.getMenuItem() != null && cartLine.getMenuItem().getStation() != null) {
+                line.setStation(cartLine.getMenuItem().getStation());
+            }
 
             List<CartSelectionResponse> pricedSelections = pricedLine.selections();
             for (int j = 0; j < pricedSelections.size(); j++) {

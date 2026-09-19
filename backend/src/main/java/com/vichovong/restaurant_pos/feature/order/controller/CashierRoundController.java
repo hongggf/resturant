@@ -34,7 +34,7 @@ public class CashierRoundController {
 
     @GetMapping("/rounds")
     public ResponseEntity<ApiResponse<List<CashierRoundResponse>>> getQueue(
-            @RequestParam(defaultValue = "SENT") RoundStatus status) {
+            @RequestParam(defaultValue = "NEW") com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus status) {
         return ResponseEntity.ok(ApiResponse.success(cashierRoundService.getQueue(status)));
     }
 
@@ -44,11 +44,7 @@ public class CashierRoundController {
         return ResponseEntity.ok(ApiResponse.success(cashierRoundService.getSessionRounds(sessionId)));
     }
 
-    @PutMapping("/rounds/{id}/ready")
-    public ResponseEntity<ApiResponse<CashierRoundResponse>> markReady(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success("Round marked ready",
-                cashierRoundService.markReady(id)));
-    }
+
 
     @PutMapping("/rounds/{id}/cancel")
     public ResponseEntity<ApiResponse<CashierRoundResponse>> cancel(

@@ -3,7 +3,7 @@ package com.vichovong.restaurant_pos.feature.order.service;
 import com.vichovong.restaurant_pos.feature.cart.dto.CartSelectionRequest;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundRequest;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundResponse;
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -18,12 +18,20 @@ import java.util.UUID;
 public interface CashierRoundService {
 
     /** FIFO across all tables, ordered by sentAt — sentAt IS the queue. */
-    List<CashierRoundResponse> getQueue(RoundStatus status);
+    List<CashierRoundResponse> getQueue(FulfillmentStatus status);
+
+    List<CashierRoundResponse> getKitchenQueue(List<com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus> lineStatuses, com.vichovong.restaurant_pos.feature.menu.entity.StationType station);
 
     List<CashierRoundResponse> getSessionRounds(UUID sessionId);
 
-    /** SENT -> READY. A future kitchen module takes over this same transition. */
-    CashierRoundResponse markReady(UUID roundId);
+    CashierRoundResponse startCooking(UUID roundId, com.vichovong.restaurant_pos.feature.menu.entity.StationType station);
+
+    /** SENT -> READY for a specific station. A future kitchen module takes over this same transition. */
+    CashierRoundResponse markReady(UUID roundId, com.vichovong.restaurant_pos.feature.menu.entity.StationType station);
+
+    CashierRoundResponse bump(UUID roundId, com.vichovong.restaurant_pos.feature.menu.entity.StationType station);
+
+    CashierRoundResponse updateLineStatus(UUID roundId, UUID lineId, com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus status);
 
     /** SENT/READY -> CANCELLED with a required reason; excluded from bill and queue. */
     CashierRoundResponse cancel(UUID roundId, String reason);

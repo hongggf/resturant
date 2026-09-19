@@ -1,6 +1,6 @@
 package com.vichovong.restaurant_pos.feature.report.service.impl;
 
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus;
 import com.vichovong.restaurant_pos.feature.report.dto.OverviewStatsResponse;
 import com.vichovong.restaurant_pos.feature.report.service.ReportService;
 import com.vichovong.restaurant_pos.feature.table.entity.SessionStatus;
@@ -60,9 +60,9 @@ public class ReportServiceImpl implements ReportService {
 
         // openTickets
         Long openTickets = entityManager.createQuery(
-                "SELECT COUNT(o) FROM OrderRound o WHERE o.status IN (:status1, :status2)", Long.class)
-                .setParameter("status1", RoundStatus.SENT)
-                .setParameter("status2", RoundStatus.READY)
+                "SELECT COUNT(o) FROM OrderRound o WHERE o.fulfillmentStatus IN (:status1, :status2)", Long.class)
+                .setParameter("status1", FulfillmentStatus.NEW)
+                .setParameter("status2", FulfillmentStatus.READY)
                 .getSingleResult();
 
         // monthlyVoids

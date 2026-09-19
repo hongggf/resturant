@@ -9,13 +9,15 @@ import com.vichovong.restaurant_pos.feature.cart.entity.CartLineModifierSelectio
 import com.vichovong.restaurant_pos.feature.cart.service.CartPricingService;
 import com.vichovong.restaurant_pos.feature.cart.service.CartValidationService;
 import com.vichovong.restaurant_pos.feature.menu.entity.MenuItem;
+import com.vichovong.restaurant_pos.feature.menu.entity.StationType;
 import com.vichovong.restaurant_pos.feature.modifier.entity.ModifierOption;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundRequest;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundResponse;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRoundLineItem;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRoundModifierSelection;
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus;
 import com.vichovong.restaurant_pos.feature.order.mapper.OrderRoundMapper;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.order.service.CashierRoundService;
@@ -50,8 +52,16 @@ public class CashierRoundServiceImpl implements CashierRoundService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CashierRoundResponse> getQueue(RoundStatus status) {
-        return orderRoundRepository.findByStatusOrderBySentAtAsc(status).stream()
+    public List<CashierRoundResponse> getQueue(FulfillmentStatus status) {
+        return orderRoundRepository.findByFulfillmentStatusOrderBySentAtAsc(status).stream()
+                .map(orderRoundMapper::toCashierRoundResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CashierRoundResponse> getKitchenQueue(List<com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus> lineStatuses, com.vichovong.restaurant_pos.feature.menu.entity.StationType station) {
+        return orderRoundRepository.findByLineStatusesAndStationOrderBySentAtAsc(lineStatuses, station).stream()
                 .map(orderRoundMapper::toCashierRoundResponse)
                 .toList();
     }
@@ -67,13 +77,52 @@ public class CashierRoundServiceImpl implements CashierRoundService {
 
     @Override
     @Transactional
-    public CashierRoundResponse markReady(UUID roundId) {
+    public CashierRoundResponse startCooking(UUID roundId, com.vichovong.restaurant_pos.feature.menu.entity.StationType station) {
         OrderRound round = requireRound(roundId);
-        if (round.getStatus() != RoundStatus.SENT) {
-            throw new ApiException(HttpStatus.CONFLICT,
-                    "Only a SENT round can be marked ready (current: " + round.getStatus() + ")");
+        round.setFulfillmentStatus(FulfillmentStatus.COOKING);
+        for (OrderRoundLineItem line : round.getLines()) {
+            if (line.getStatus() == com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SENT && line.getStation() == station) {
+                line.setStatus(com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.COOKING);
+            }
         }
-        round.setStatus(RoundStatus.READY);
+        return orderRoundMapper.toCashierRoundResponse(round);
+    }
+
+    @Override
+    @Transactional
+    public CashierRoundResponse markReady(UUID roundId, com.vichovong.restaurant_pos.feature.menu.entity.StationType station) {
+        OrderRound round = requireRound(roundId);
+        round.setFulfillmentStatus(FulfillmentStatus.READY);
+        for (OrderRoundLineItem line : round.getLines()) {
+            if ((line.getStatus() == com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SENT || line.getStatus() == com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.COOKING) && line.getStation() == station) {
+                line.setStatus(com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.READY);
+            }
+        }
+        return orderRoundMapper.toCashierRoundResponse(round);
+    }
+
+    @Override
+    @Transactional
+    public CashierRoundResponse bump(UUID roundId, com.vichovong.restaurant_pos.feature.menu.entity.StationType station) {
+        OrderRound round = requireRound(roundId);
+        round.setFulfillmentStatus(FulfillmentStatus.SERVED);
+        for (OrderRoundLineItem line : round.getLines()) {
+            if ((line.getStatus() == com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SENT || line.getStatus() == com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.COOKING || line.getStatus() == com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.READY) && line.getStation() == station) {
+                line.setStatus(com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SERVED);
+            }
+        }
+        return orderRoundMapper.toCashierRoundResponse(round);
+    }
+
+    @Override
+    @Transactional
+    public CashierRoundResponse updateLineStatus(UUID roundId, UUID lineId, com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus status) {
+        OrderRound round = requireRound(roundId);
+        OrderRoundLineItem line = round.getLines().stream()
+                .filter(l -> l.getId().equals(lineId))
+                .findFirst()
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Round line not found: " + lineId));
+        line.setStatus(status);
         return orderRoundMapper.toCashierRoundResponse(round);
     }
 
@@ -81,11 +130,23 @@ public class CashierRoundServiceImpl implements CashierRoundService {
     @Transactional
     public CashierRoundResponse cancel(UUID roundId, String reason) {
         OrderRound round = requireRound(roundId);
-        if (round.getStatus() != RoundStatus.SENT && round.getStatus() != RoundStatus.READY) {
-            throw new ApiException(HttpStatus.CONFLICT,
-                    "Only a SENT or READY round can be cancelled (current: " + round.getStatus() + ")");
+        if (round.getFulfillmentStatus() == FulfillmentStatus.COOKING
+                || round.getFulfillmentStatus() == FulfillmentStatus.READY
+                || round.getFulfillmentStatus() == FulfillmentStatus.SERVED) {
+            boolean hasUnservedKitchenLine = round.getLines() != null && round.getLines().stream()
+                    .anyMatch(l -> !l.isVoided()
+                            && l.getStation() == StationType.KITCHEN
+                            && l.getStatus() != LineItemStatus.SERVED);
+            if (hasUnservedKitchenLine) {
+                throw new ApiException(HttpStatus.CONFLICT,
+                        "Cannot cancel a round while the kitchen is cooking — bump it instead or wait until it is served");
+            }
         }
-        round.setStatus(RoundStatus.CANCELLED);
+        if (round.getFulfillmentStatus() != FulfillmentStatus.NEW && round.getFulfillmentStatus() != FulfillmentStatus.READY && round.getFulfillmentStatus() != FulfillmentStatus.COOKING) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Only a NEW, COOKING, or READY round can be cancelled (current: " + round.getFulfillmentStatus() + ")");
+        }
+        round.setFulfillmentStatus(FulfillmentStatus.CANCELLED);
         round.setCancelledAt(Instant.now());
         round.setCancelReason(reason);
         return orderRoundMapper.toCashierRoundResponse(round);
@@ -95,9 +156,15 @@ public class CashierRoundServiceImpl implements CashierRoundService {
     @Transactional
     public CashierRoundResponse voidLine(UUID roundId, UUID lineId, String reason, String username) {
         OrderRound round = requireRound(roundId);
-        if (round.getStatus() != RoundStatus.SENT && round.getStatus() != RoundStatus.READY) {
+        if (round.getFulfillmentStatus() == FulfillmentStatus.COOKING
+                || round.getFulfillmentStatus() == FulfillmentStatus.READY
+                || round.getFulfillmentStatus() == FulfillmentStatus.SERVED) {
             throw new ApiException(HttpStatus.CONFLICT,
-                    "Lines can only be voided on a SENT or READY round (current: " + round.getStatus() + ")");
+                    "Cannot void a line while the kitchen is cooking — bump it instead or wait until it is served");
+        }
+        if (round.getFulfillmentStatus() != FulfillmentStatus.NEW) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Lines can only be voided on a NEW round (current: " + round.getFulfillmentStatus() + ")");
         }
         OrderRoundLineItem line = round.getLines().stream()
                 .filter(l -> l.getId().equals(lineId))
@@ -158,9 +225,15 @@ public class CashierRoundServiceImpl implements CashierRoundService {
     @Transactional
     public CashierRoundResponse updateLineSelections(UUID roundId, UUID lineId, List<CartSelectionRequest> selections) {
         OrderRound round = requireRound(roundId);
-        if (round.getStatus() != RoundStatus.SENT && round.getStatus() != RoundStatus.READY) {
+        if (round.getFulfillmentStatus() == FulfillmentStatus.COOKING
+                || round.getFulfillmentStatus() == FulfillmentStatus.READY
+                || round.getFulfillmentStatus() == FulfillmentStatus.SERVED) {
             throw new ApiException(HttpStatus.CONFLICT,
-                    "Selections can only be edited on a SENT or READY round (current: " + round.getStatus() + ")");
+                    "Cannot edit a line while the kitchen is cooking — bump it instead or wait until it is served");
+        }
+        if (round.getFulfillmentStatus() != FulfillmentStatus.NEW) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Selections can only be edited on a NEW round (current: " + round.getFulfillmentStatus() + ")");
         }
         OrderRoundLineItem line = round.getLines().stream()
                 .filter(l -> l.getId().equals(lineId))

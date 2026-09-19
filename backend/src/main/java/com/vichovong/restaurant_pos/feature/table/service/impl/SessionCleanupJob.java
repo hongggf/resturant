@@ -1,7 +1,7 @@
 package com.vichovong.restaurant_pos.feature.table.service.impl;
 
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.table.entity.SessionStatus;
 import com.vichovong.restaurant_pos.feature.table.entity.TableSession;
@@ -45,11 +45,11 @@ public class SessionCleanupJob {
         Instant now = Instant.now();
         List<UUID> staleSessionIds = stale.stream().map(TableSession::getId).toList();
         List<OrderRound> pendingRounds = orderRoundRepository.findBySessionIdIn(staleSessionIds).stream()
-                .filter(r -> r.getStatus() == RoundStatus.SENT || r.getStatus() == RoundStatus.READY)
+                .filter(r -> r.getFulfillmentStatus() == FulfillmentStatus.NEW || r.getFulfillmentStatus() == FulfillmentStatus.READY || r.getFulfillmentStatus() == FulfillmentStatus.COOKING)
                 .toList();
 
         for (OrderRound round : pendingRounds) {
-            round.setStatus(RoundStatus.CANCELLED);
+            round.setFulfillmentStatus(FulfillmentStatus.CANCELLED);
             round.setCancelledAt(now);
             round.setCancelReason("Session timed out / abandoned");
         }

@@ -103,36 +103,46 @@ public class CashierTableServiceImpl implements CashierTableService {
                                              Map<UUID, List<OrderRound>> roundsBySessionId, ClosedSessionInfo lastClosed) {
         if (session == null) {
             return new TableOverviewResponse(table.getId(), table.getTableNumber(),
-                    TableState.IDLE, null, 0, BigDecimal.ZERO, 
+                    TableState.IDLE, null, null, BigDecimal.ZERO, 
                     lastClosed != null ? lastClosed.sessionId() : null,
                     lastClosed != null ? lastClosed.hasReceipt() : false);
         }
 
         List<OrderRound> liveRounds = roundsBySessionId
                 .getOrDefault(session.getId(), List.of()).stream()
-                .filter(r -> r.getStatus() != RoundStatus.CANCELLED)
+                .filter(r -> r.getFulfillmentStatus() != com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.CANCELLED)
                 .toList();
 
         // Derived, never stored (cashier spec §2): no live rounds -> IDLE;
         // any SENT -> ORDERED; otherwise everything is READY -> SERVED
+        boolean hasSent = liveRounds.stream()
+                .flatMap(r -> r.getLines().stream())
+                .anyMatch(l -> !l.isVoided() && l.getStatus() == com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SENT);
+
         TableState state;
         if (liveRounds.isEmpty()) {
             state = TableState.IDLE;
-        } else if (liveRounds.stream().anyMatch(r -> r.getStatus() == RoundStatus.SENT)) {
+        } else if (hasSent) {
             state = TableState.ORDERED;
         } else {
             state = TableState.SERVED;
         }
 
-        int openRoundCount = (int) liveRounds.stream()
-                .filter(r -> r.getStatus() == RoundStatus.SENT || r.getStatus() == RoundStatus.READY)
-                .count();
+        com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus fulfillmentStatus = com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.SERVED;
+        if (liveRounds.stream().anyMatch(r -> r.getFulfillmentStatus() == com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.NEW)) {
+            fulfillmentStatus = com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.NEW;
+        } else if (liveRounds.stream().anyMatch(r -> r.getFulfillmentStatus() == com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.COOKING)) {
+            fulfillmentStatus = com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.COOKING;
+        } else if (liveRounds.stream().anyMatch(r -> r.getFulfillmentStatus() == com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.READY)) {
+            fulfillmentStatus = com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus.READY;
+        }
+
         BigDecimal runningTotal = liveRounds.stream()
                 .map(OrderRound::getGrandTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new TableOverviewResponse(table.getId(), table.getTableNumber(),
-                state, session.getId(), openRoundCount, runningTotal,
+                state, session.getId(), fulfillmentStatus, runningTotal,
                 lastClosed != null ? lastClosed.sessionId() : null,
                 lastClosed != null ? lastClosed.hasReceipt() : false);
     }
