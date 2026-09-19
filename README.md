@@ -47,12 +47,13 @@ A modern, full-stack Restaurant Management and Point of Sale (POS) system engine
 - **Dual-Currency Cart**: Automatic pricing recalculations with VAT handling and real-time USD/KHR currency conversion.
 
 ### 2. 🖥️ Cashier & Till Terminal
-- **Visual Table Status Board**: Polled overview with color-coded states:
-  - 🟨 **IDLE**: Table empty or session has no pending rounds.
-  - 🟥 **ORDERED**: Active rounds waiting in queue (`SENT`).
-  - 🟦 **SERVED**: All cooked items delivered (`READY`).
-- **FIFO Order Cook Queue**: Centralized stream of all rounds across all tables ordered chronologically (`sentAt`).
-- **Round & Line Item Controls**: Mark rounds ready, cancel rounds with mandatory audit reasons, or void specific line items.
+- **Visual Table Status Board**: Polled overview with color-coded states (mixed rounds roll up most-urgent-wins: any NEW/COOKING beats any READY beats SERVED):
+  - ⬜ **IDLE**: Table empty.
+  - 🟨 **WAITING**: Any live round `NEW` or `COOKING` (kitchen working).
+  - 🟦 **AT PASS**: All rounds cooked and at least one `READY` (food at the pass — go run it).
+  - 🟩 **READY TO PAY**: All rounds `SERVED` with an outstanding balance.
+- **Station Routing (KITCHEN vs COUNTER)**: Every menu item carries a station tag, snapshotted onto each order line. `KITCHEN` lines feed the KDS; `COUNTER` lines (drinks, desserts) are flagged for the cashier's counter queue instead of the cooks.
+- **Round & Line Item Controls**: Cancel rounds with mandatory audit reasons, or void/edit specific line items. Voids and edits are **rejected with 409 once the kitchen has started cooking** (or the round is READY/SERVED); rounds with unserved KITCHEN lines cannot be cancelled.
 - **Walk-In / Manual Ordering**: Staff can open sessions and submit rounds directly for phone-less customers.
 - **Bill Calculation & Settlement**: Dual-currency settlement (USD & KHR) with support for:
   - **Cash**: Computes exact change across currencies.
@@ -60,11 +61,11 @@ A modern, full-stack Restaurant Management and Point of Sale (POS) system engine
 - **Bilingual Printable Receipts**: Instant receipt payload generation upon payment confirmation.
 
 ### 3. 👨‍🍳 Kitchen Display
-- **Dedicated Cook Queue**: A `CHEF` account lands on `/kitchen`, a polled FIFO board of every `SENT` round across all tables, oldest first.
-- **Kitchen-Shaped Tickets**: Table number, round number and waiting time lead; items show quantity, bilingual names, modifier selections and guest remarks. The ticket shows no prices (the round payload still carries totals, so this is a UI choice, not an access boundary).
+- **Dedicated Cook Queue**: A `CHEF` account lands on `/kitchen`, a polled board of every round with `KITCHEN` lines across all tables, oldest first. `COUNTER` lines (drinks/desserts) never reach the kitchen — they go to the cashier's counter queue.
+- **Persisted Cooking State**: "Start Cooking" and per-line statuses are saved to the database (not tablet-local state), so a screen refresh or tablet reboot never loses ticket state. The cashier table board mirrors them live.
+- **Line-Level Progress & Bumping**: Cooks strike out individual dishes as finished; once all KITCHEN lines are done, "Mark Ready" moves the ticket to the expedite column, and "Bump" clears it after the food is run.
 - **Ticket Ageing**: Tickets pass 10 minutes to amber and 20 minutes to red so a backed-up pass is visible at a glance.
-- **Narrow Permissions**: The chef's entire API surface is `KitchenController` — read the queue, mark a round ready. Cancel, void, payments and the table board stay with the cashier.
-- **Shared Responsibility**: The cashier keeps its own mark-ready control as a fallback when the kitchen tablet is unavailable.
+- **Narrow Permissions**: The chef's entire API surface is `KitchenController` — read the queue, start cooking, mark lines ready, bump. Cancel, void, payments and the table board stay with the cashier.
 
 ### 4. ⚙️ Admin Backoffice
 - **Category & Menu Management**: Create, reorder, toggle availability, upload dish photos, and set bilingual descriptions.
@@ -290,16 +291,19 @@ Configuration is managed via the root `.env` file:
          │
          ▼
  ┌────────────────┐
- │ Kitchen Queue  │ ──► GET /api/v1/kitchen/rounds?status=SENT (FIFO Cook Queue)
- │ & Table Board  │ ──► PUT /api/v1/kitchen/rounds/{id}/ready (status: READY)
- │                │     Cashier equivalents live at /api/v1/rounds/...
+ │ Kitchen Queue  │ ──► GET /api/v1/kitchen/rounds (KITCHEN lines only)
+ │ & Table Board  │     PUT /kitchen/rounds/{id}/start-cooking → COOKING
+ │                │     PUT /kitchen/rounds/{id}/lines/{lineId}/status → READY
+ │                │     PUT /kitchen/rounds/{id}/ready (all lines done)
+ │                │     PUT /kitchen/rounds/{id}/bump → SERVED
  └────────────────┘
          │
          ▼
  ┌────────────────┐
  │    Checkout    │ ──► POST /api/v1/sessions/{id}/payments (CASH / KHQR)
- │   & Receipts   │     - Closes Session, Marks Rounds COMPLETED
- └────────────────┘     - Returns bilingual receipt payload
+ │   & Receipts   │     - Marks Rounds PAID (fulfillment unaffected —
+ └────────────────┘       kitchen may still be cooking)
+                          - Closes Session, returns bilingual receipt payload
 ```
 
 ---
