@@ -4,7 +4,8 @@ import com.vichovong.restaurant_pos.feature.currency.service.ExchangeRateService
 import com.vichovong.restaurant_pos.feature.order.dto.OrderRoundLineResponse;
 import com.vichovong.restaurant_pos.feature.order.dto.OrderRoundResponse;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.PaymentStatus;
 import com.vichovong.restaurant_pos.feature.order.mapper.OrderRoundMapper;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.payment.dto.BillResponse;
@@ -69,7 +70,8 @@ class BillingServiceImplTest {
         OrderRound round1 = new OrderRound();
         round1.setId(UUID.randomUUID());
         round1.setRoundNumber(1);
-        round1.setStatus(RoundStatus.READY);
+        round1.setFulfillmentStatus(FulfillmentStatus.READY);
+        round1.setPaymentStatus(PaymentStatus.UNPAID);
         round1.setSubtotal(new BigDecimal("20.00"));
         round1.setVatAmount(new BigDecimal("2.00"));
         round1.setGrandTotal(new BigDecimal("22.00"));
@@ -77,7 +79,8 @@ class BillingServiceImplTest {
         OrderRound cancelledRound = new OrderRound();
         cancelledRound.setId(UUID.randomUUID());
         cancelledRound.setRoundNumber(2);
-        cancelledRound.setStatus(RoundStatus.CANCELLED);
+        cancelledRound.setFulfillmentStatus(FulfillmentStatus.CANCELLED);
+        cancelledRound.setPaymentStatus(PaymentStatus.UNPAID);
         cancelledRound.setSubtotal(new BigDecimal("15.00"));
         cancelledRound.setVatAmount(new BigDecimal("1.50"));
         cancelledRound.setGrandTotal(new BigDecimal("16.50"));
@@ -85,7 +88,8 @@ class BillingServiceImplTest {
         OrderRound round3 = new OrderRound();
         round3.setId(UUID.randomUUID());
         round3.setRoundNumber(3);
-        round3.setStatus(RoundStatus.SENT);
+        round3.setFulfillmentStatus(FulfillmentStatus.NEW);
+        round3.setPaymentStatus(PaymentStatus.UNPAID);
         round3.setSubtotal(new BigDecimal("10.00"));
         round3.setVatAmount(new BigDecimal("1.00"));
         round3.setGrandTotal(new BigDecimal("11.00"));
@@ -94,12 +98,12 @@ class BillingServiceImplTest {
                 .thenReturn(List.of(round1, cancelledRound, round3));
 
         OrderRoundResponse round1Resp = new OrderRoundResponse(
-                round1.getId(), 1, RoundStatus.READY,
+                round1.getId(), 1, PaymentStatus.UNPAID, FulfillmentStatus.READY,
                 new BigDecimal("20.00"), new BigDecimal("0.10"), new BigDecimal("2.00"), new BigDecimal("22.00"),
                 Instant.now(), List.of()
         );
         OrderRoundResponse round3Resp = new OrderRoundResponse(
-                round3.getId(), 3, RoundStatus.SENT,
+                round3.getId(), 3, PaymentStatus.UNPAID, FulfillmentStatus.NEW,
                 new BigDecimal("10.00"), new BigDecimal("0.10"), new BigDecimal("1.00"), new BigDecimal("11.00"),
                 Instant.now(), List.of()
         );
@@ -126,7 +130,8 @@ class BillingServiceImplTest {
         OrderRound round = new OrderRound();
         round.setId(UUID.randomUUID());
         round.setRoundNumber(1);
-        round.setStatus(RoundStatus.READY);
+        round.setFulfillmentStatus(FulfillmentStatus.READY);
+        round.setPaymentStatus(PaymentStatus.UNPAID);
         round.setSubtotal(new BigDecimal("10.00"));
         round.setVatAmount(new BigDecimal("1.00"));
         round.setGrandTotal(new BigDecimal("11.00"));
@@ -137,16 +142,16 @@ class BillingServiceImplTest {
         OrderRoundLineResponse activeLine = new OrderRoundLineResponse(
                 UUID.randomUUID(), UUID.randomUUID(), "Broth", "ទឹកស៊ុប",
                 new BigDecimal("10.00"), new BigDecimal("10.00"), 1, new BigDecimal("10.00"),
-                "", false, null, List.of()
+                "", false, null, com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SENT, com.vichovong.restaurant_pos.feature.menu.entity.StationType.KITCHEN, List.of()
         );
         OrderRoundLineResponse voidedLine = new OrderRoundLineResponse(
                 UUID.randomUUID(), UUID.randomUUID(), "Wrong Dish", "ខុស",
                 new BigDecimal("5.00"), new BigDecimal("5.00"), 1, new BigDecimal("5.00"),
-                "", true, "Accidental order", List.of()
+                "", true, "Accidental order", com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SENT, com.vichovong.restaurant_pos.feature.menu.entity.StationType.KITCHEN, List.of()
         );
 
         OrderRoundResponse roundResp = new OrderRoundResponse(
-                round.getId(), 1, RoundStatus.READY,
+                round.getId(), 1, PaymentStatus.UNPAID, FulfillmentStatus.READY,
                 new BigDecimal("10.00"), new BigDecimal("0.10"), new BigDecimal("1.00"), new BigDecimal("11.00"),
                 Instant.now(), List.of(activeLine, voidedLine)
         );

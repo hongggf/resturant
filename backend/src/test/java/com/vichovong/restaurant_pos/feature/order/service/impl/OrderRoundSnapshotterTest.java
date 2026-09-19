@@ -9,7 +9,8 @@ import com.vichovong.restaurant_pos.feature.menu.entity.MenuItem;
 import com.vichovong.restaurant_pos.feature.modifier.entity.ModifierOption;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRoundLineItem;
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.PaymentStatus;
 import com.vichovong.restaurant_pos.feature.table.entity.TableSession;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -75,7 +76,7 @@ class OrderRoundSnapshotterTest {
         assertThat(round.getSession()).isEqualTo(session);
         assertThat(round.getRoundNumber()).isEqualTo(1);
         assertThat(round.getDeviceId()).isEqualTo(deviceId);
-        assertThat(round.getStatus()).isEqualTo(RoundStatus.SENT);
+        assertThat(round.getFulfillmentStatus()).isEqualTo(FulfillmentStatus.NEW);
         assertThat(round.getSubtotal()).isEqualByComparingTo(new BigDecimal("11.00"));
         assertThat(round.getVatRate()).isEqualByComparingTo(new BigDecimal("0.10"));
         assertThat(round.getVatAmount()).isEqualByComparingTo(new BigDecimal("1.10"));

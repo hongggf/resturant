@@ -3,7 +3,8 @@ package com.vichovong.restaurant_pos.feature.payment.service.impl;
 import com.vichovong.restaurant_pos.common.exception.ApiException;
 import com.vichovong.restaurant_pos.feature.currency.service.ExchangeRateService;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.PaymentStatus;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.payment.dto.PaymentRequest;
 import com.vichovong.restaurant_pos.feature.payment.dto.ReceiptResponse;
@@ -82,7 +83,8 @@ class SessionPaymentServiceImplTest {
 
         billableRound = new OrderRound();
         billableRound.setId(UUID.randomUUID());
-        billableRound.setStatus(RoundStatus.READY);
+        billableRound.setFulfillmentStatus(FulfillmentStatus.READY);
+        billableRound.setPaymentStatus(PaymentStatus.UNPAID);
         billableRound.setGrandTotal(new BigDecimal("20.00"));
     }
 
@@ -142,7 +144,7 @@ class SessionPaymentServiceImplTest {
         assertThat(response).isNotNull();
         assertThat(activeSession.getStatus()).isEqualTo(SessionStatus.CLOSED);
         assertThat(activeSession.getClosedAt()).isNotNull();
-        assertThat(billableRound.getStatus()).isEqualTo(RoundStatus.COMPLETED);
+        assertThat(billableRound.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
 
         ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
         verify(paymentRepository).save(paymentCaptor.capture());

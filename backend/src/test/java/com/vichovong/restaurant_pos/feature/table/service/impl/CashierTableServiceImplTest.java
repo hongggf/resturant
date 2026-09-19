@@ -1,7 +1,9 @@
 package com.vichovong.restaurant_pos.feature.table.service.impl;
 
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.OrderRoundLineItem;
+import com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.PaymentStatus;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.table.dto.StaffSessionResponse;
 import com.vichovong.restaurant_pos.feature.table.dto.TableOverviewResponse;
@@ -92,15 +94,23 @@ class CashierTableServiceImplTest {
         OrderRound sentRound = new OrderRound();
         sentRound.setId(UUID.randomUUID());
         sentRound.setSession(session1);
-        sentRound.setStatus(RoundStatus.SENT);
+        sentRound.setFulfillmentStatus(FulfillmentStatus.NEW);
+        sentRound.setPaymentStatus(PaymentStatus.UNPAID);
         sentRound.setGrandTotal(new BigDecimal("15.00"));
+        OrderRoundLineItem sentLine = new OrderRoundLineItem();
+        sentLine.setStatus(com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SENT);
+        sentRound.setLines(List.of(sentLine));
 
         // Session 2: Has one READY round -> SERVED
         OrderRound readyRound = new OrderRound();
         readyRound.setId(UUID.randomUUID());
         readyRound.setSession(session2);
-        readyRound.setStatus(RoundStatus.READY);
+        readyRound.setFulfillmentStatus(FulfillmentStatus.READY);
+        readyRound.setPaymentStatus(PaymentStatus.UNPAID);
         readyRound.setGrandTotal(new BigDecimal("25.00"));
+        OrderRoundLineItem readyLine = new OrderRoundLineItem();
+        readyLine.setStatus(com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.READY);
+        readyRound.setLines(List.of(readyLine));
 
         when(orderRoundRepository.findBySessionIdIn(anyList()))
                 .thenReturn(List.of(sentRound, readyRound));
@@ -112,19 +122,19 @@ class CashierTableServiceImplTest {
         // Table 1 (Session 1): ORDERED
         TableOverviewResponse t1 = overview.stream().filter(t -> t.tableNumber().equals("T-01")).findFirst().orElseThrow();
         assertThat(t1.state()).isEqualTo(TableState.ORDERED);
-        assertThat(t1.openRoundCount()).isEqualTo(1);
+        assertThat(t1.fulfillmentStatus()).isEqualTo(FulfillmentStatus.NEW);
         assertThat(t1.runningTotal()).isEqualByComparingTo(new BigDecimal("15.00"));
 
         // Table 2 (Session 2): SERVED
         TableOverviewResponse t2 = overview.stream().filter(t -> t.tableNumber().equals("T-02")).findFirst().orElseThrow();
         assertThat(t2.state()).isEqualTo(TableState.SERVED);
-        assertThat(t2.openRoundCount()).isEqualTo(1);
+        assertThat(t2.fulfillmentStatus()).isEqualTo(FulfillmentStatus.READY);
         assertThat(t2.runningTotal()).isEqualByComparingTo(new BigDecimal("25.00"));
 
         // Table 3 (No session): IDLE
         TableOverviewResponse t3 = overview.stream().filter(t -> t.tableNumber().equals("T-03")).findFirst().orElseThrow();
         assertThat(t3.state()).isEqualTo(TableState.IDLE);
-        assertThat(t3.openRoundCount()).isEqualTo(0);
+        assertThat(t3.fulfillmentStatus()).isNull();
         assertThat(t3.runningTotal()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 

@@ -3,10 +3,13 @@ package com.vichovong.restaurant_pos.feature.order.service.impl;
 import com.vichovong.restaurant_pos.common.exception.ApiException;
 import com.vichovong.restaurant_pos.feature.cart.service.CartPricingService;
 import com.vichovong.restaurant_pos.feature.cart.service.CartValidationService;
+import com.vichovong.restaurant_pos.feature.menu.entity.StationType;
 import com.vichovong.restaurant_pos.feature.order.dto.CashierRoundResponse;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRoundLineItem;
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.PaymentStatus;
 import com.vichovong.restaurant_pos.feature.order.mapper.OrderRoundMapper;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.table.entity.DiningTable;
@@ -70,7 +73,8 @@ class CashierRoundServiceImplTest {
         sentRound = new OrderRound();
         sentRound.setId(UUID.randomUUID());
         sentRound.setSession(session);
-        sentRound.setStatus(RoundStatus.SENT);
+        sentRound.setFulfillmentStatus(FulfillmentStatus.NEW);
+        sentRound.setPaymentStatus(PaymentStatus.UNPAID);
         sentRound.setRoundNumber(1);
         sentRound.setVatRate(new BigDecimal("0.10"));
         sentRound.setSubtotal(new BigDecimal("10.00"));
@@ -80,32 +84,30 @@ class CashierRoundServiceImplTest {
     }
 
     @Test
-    @DisplayName("markReady: transitions SENT round to READY")
+    @DisplayName("markReady: transitions SENT lines of specific station to READY")
     void markReady_sentRound_transitionsToReady() {
+        OrderRoundLineItem line1 = new OrderRoundLineItem();
+        line1.setStatus(com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SENT);
+        line1.setStation(com.vichovong.restaurant_pos.feature.menu.entity.StationType.KITCHEN);
+        
+        OrderRoundLineItem line2 = new OrderRoundLineItem();
+        line2.setStatus(com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SENT);
+        line2.setStation(com.vichovong.restaurant_pos.feature.menu.entity.StationType.COUNTER);
+        
+        sentRound.setLines(List.of(line1, line2));
         when(orderRoundRepository.findById(sentRound.getId())).thenReturn(Optional.of(sentRound));
 
         CashierRoundResponse expectedResponse = new CashierRoundResponse(
-                sentRound.getId(), session.getId(), "T-01", 1, RoundStatus.READY,
+                sentRound.getId(), session.getId(), "T-01", 1, PaymentStatus.UNPAID, FulfillmentStatus.NEW,
                 sentRound.getSubtotal(), sentRound.getVatRate(), sentRound.getVatAmount(), sentRound.getGrandTotal(),
                 Instant.now(), null, null, List.of()
         );
         when(orderRoundMapper.toCashierRoundResponse(sentRound)).thenReturn(expectedResponse);
 
-        CashierRoundResponse response = cashierRoundService.markReady(sentRound.getId());
+        CashierRoundResponse response = cashierRoundService.markReady(sentRound.getId(), com.vichovong.restaurant_pos.feature.menu.entity.StationType.KITCHEN);
 
-        assertThat(sentRound.getStatus()).isEqualTo(RoundStatus.READY);
-        assertThat(response.status()).isEqualTo(RoundStatus.READY);
-    }
-
-    @Test
-    @DisplayName("markReady: throws CONFLICT when round is not SENT (e.g., READY or COMPLETED)")
-    void markReady_notSentRound_throwsConflict() {
-        sentRound.setStatus(RoundStatus.READY);
-        when(orderRoundRepository.findById(sentRound.getId())).thenReturn(Optional.of(sentRound));
-
-        assertThatThrownBy(() -> cashierRoundService.markReady(sentRound.getId()))
-                .isInstanceOf(ApiException.class)
-                .satisfies(ex -> assertThat(((ApiException) ex).getStatus()).isEqualTo(HttpStatus.CONFLICT));
+        assertThat(line1.getStatus()).isEqualTo(com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.READY);
+        assertThat(line2.getStatus()).isEqualTo(com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus.SENT);
     }
 
     @Test
@@ -114,7 +116,7 @@ class CashierRoundServiceImplTest {
         when(orderRoundRepository.findById(sentRound.getId())).thenReturn(Optional.of(sentRound));
 
         CashierRoundResponse expectedResponse = new CashierRoundResponse(
-                sentRound.getId(), session.getId(), "T-01", 1, RoundStatus.CANCELLED,
+                sentRound.getId(), session.getId(), "T-01", 1, PaymentStatus.UNPAID, FulfillmentStatus.CANCELLED,
                 sentRound.getSubtotal(), sentRound.getVatRate(), sentRound.getVatAmount(), sentRound.getGrandTotal(),
                 Instant.now(), Instant.now(), "Customer changed mind", List.of()
         );
@@ -122,7 +124,7 @@ class CashierRoundServiceImplTest {
 
         CashierRoundResponse response = cashierRoundService.cancel(sentRound.getId(), "Customer changed mind");
 
-        assertThat(sentRound.getStatus()).isEqualTo(RoundStatus.CANCELLED);
+        assertThat(sentRound.getFulfillmentStatus()).isEqualTo(FulfillmentStatus.CANCELLED);
         assertThat(sentRound.getCancelReason()).isEqualTo("Customer changed mind");
         assertThat(sentRound.getCancelledAt()).isNotNull();
     }
@@ -130,7 +132,7 @@ class CashierRoundServiceImplTest {
     @Test
     @DisplayName("cancel: throws CONFLICT when round is already CANCELLED or COMPLETED")
     void cancel_alreadyCancelledRound_throwsConflict() {
-        sentRound.setStatus(RoundStatus.CANCELLED);
+        sentRound.setFulfillmentStatus(FulfillmentStatus.CANCELLED);
         when(orderRoundRepository.findById(sentRound.getId())).thenReturn(Optional.of(sentRound));
 
         assertThatThrownBy(() -> cashierRoundService.cancel(sentRound.getId(), "Duplicate"))
@@ -175,5 +177,123 @@ class CashierRoundServiceImplTest {
         assertThat(sentRound.getSubtotal()).isEqualByComparingTo(new BigDecimal("15.00"));
         assertThat(sentRound.getVatAmount()).isEqualByComparingTo(new BigDecimal("1.50"));
         assertThat(sentRound.getGrandTotal()).isEqualByComparingTo(new BigDecimal("16.50"));
+    }
+
+    @Test
+    @DisplayName("voidLine: throws CONFLICT when round is COOKING")
+    void voidLine_cookingRound_throwsConflict() {
+        sentRound.setFulfillmentStatus(FulfillmentStatus.COOKING);
+        when(orderRoundRepository.findById(sentRound.getId())).thenReturn(Optional.of(sentRound));
+
+        assertThatThrownBy(() -> cashierRoundService.voidLine(sentRound.getId(), UUID.randomUUID(), "Wrong item", "cashier01"))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    ApiException apiEx = (ApiException) ex;
+                    assertThat(apiEx.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(apiEx.getMessage()).contains("Cannot void a line while the kitchen is cooking — bump it instead or wait until it is served");
+                });
+    }
+
+    @Test
+    @DisplayName("voidLine: throws CONFLICT when round is READY or SERVED")
+    void voidLine_readyOrServedRound_throwsConflict() {
+        sentRound.setFulfillmentStatus(FulfillmentStatus.READY);
+        when(orderRoundRepository.findById(sentRound.getId())).thenReturn(Optional.of(sentRound));
+
+        assertThatThrownBy(() -> cashierRoundService.voidLine(sentRound.getId(), UUID.randomUUID(), "Wrong item", "cashier01"))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    ApiException apiEx = (ApiException) ex;
+                    assertThat(apiEx.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(apiEx.getMessage()).contains("Cannot void a line while the kitchen is cooking — bump it instead or wait until it is served");
+                });
+    }
+
+    @Test
+    @DisplayName("updateLineSelections: throws CONFLICT when round is COOKING")
+    void updateLineSelections_cookingRound_throwsConflict() {
+        sentRound.setFulfillmentStatus(FulfillmentStatus.COOKING);
+        when(orderRoundRepository.findById(sentRound.getId())).thenReturn(Optional.of(sentRound));
+
+        assertThatThrownBy(() -> cashierRoundService.updateLineSelections(sentRound.getId(), UUID.randomUUID(), List.of()))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    ApiException apiEx = (ApiException) ex;
+                    assertThat(apiEx.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(apiEx.getMessage()).contains("Cannot edit a line while the kitchen is cooking — bump it instead or wait until it is served");
+                });
+    }
+
+    @Test
+    @DisplayName("cancel: throws CONFLICT when round is COOKING and has unserved kitchen line")
+    void cancel_cookingRoundWithUnservedKitchenLine_throwsConflict() {
+        sentRound.setFulfillmentStatus(FulfillmentStatus.COOKING);
+        OrderRoundLineItem kitchenLine = new OrderRoundLineItem();
+        kitchenLine.setId(UUID.randomUUID());
+        kitchenLine.setStation(StationType.KITCHEN);
+        kitchenLine.setStatus(LineItemStatus.COOKING);
+        kitchenLine.setOrderRound(sentRound);
+        sentRound.setLines(List.of(kitchenLine));
+
+        when(orderRoundRepository.findById(sentRound.getId())).thenReturn(Optional.of(sentRound));
+
+        assertThatThrownBy(() -> cashierRoundService.cancel(sentRound.getId(), "Customer changed mind"))
+                .isInstanceOf(ApiException.class)
+                .satisfies(ex -> {
+                    ApiException apiEx = (ApiException) ex;
+                    assertThat(apiEx.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(apiEx.getMessage()).contains("Cannot cancel a round while the kitchen is cooking — bump it instead or wait until it is served");
+                });
+    }
+
+    @Test
+    @DisplayName("cancel: cancels COOKING round when all kitchen lines are SERVED")
+    void cancel_cookingRoundWithAllKitchenLinesServed_cancelsSuccessfully() {
+        sentRound.setFulfillmentStatus(FulfillmentStatus.COOKING);
+        OrderRoundLineItem kitchenLine = new OrderRoundLineItem();
+        kitchenLine.setId(UUID.randomUUID());
+        kitchenLine.setStation(StationType.KITCHEN);
+        kitchenLine.setStatus(LineItemStatus.SERVED);
+        kitchenLine.setOrderRound(sentRound);
+        sentRound.setLines(List.of(kitchenLine));
+
+        when(orderRoundRepository.findById(sentRound.getId())).thenReturn(Optional.of(sentRound));
+
+        CashierRoundResponse expectedResponse = new CashierRoundResponse(
+                sentRound.getId(), session.getId(), "T-01", 1, PaymentStatus.UNPAID, FulfillmentStatus.CANCELLED,
+                sentRound.getSubtotal(), sentRound.getVatRate(), sentRound.getVatAmount(), sentRound.getGrandTotal(),
+                Instant.now(), Instant.now(), "Customer changed mind", List.of()
+        );
+        when(orderRoundMapper.toCashierRoundResponse(sentRound)).thenReturn(expectedResponse);
+
+        CashierRoundResponse response = cashierRoundService.cancel(sentRound.getId(), "Customer changed mind");
+
+        assertThat(sentRound.getFulfillmentStatus()).isEqualTo(FulfillmentStatus.CANCELLED);
+        assertThat(sentRound.getCancelReason()).isEqualTo("Customer changed mind");
+    }
+
+    @Test
+    @DisplayName("cancel: cancels COOKING round when round has only COUNTER lines")
+    void cancel_cookingRoundWithOnlyCounterLines_cancelsSuccessfully() {
+        sentRound.setFulfillmentStatus(FulfillmentStatus.COOKING);
+        OrderRoundLineItem counterLine = new OrderRoundLineItem();
+        counterLine.setId(UUID.randomUUID());
+        counterLine.setStation(StationType.COUNTER);
+        counterLine.setStatus(LineItemStatus.COOKING);
+        counterLine.setOrderRound(sentRound);
+        sentRound.setLines(List.of(counterLine));
+
+        when(orderRoundRepository.findById(sentRound.getId())).thenReturn(Optional.of(sentRound));
+
+        CashierRoundResponse expectedResponse = new CashierRoundResponse(
+                sentRound.getId(), session.getId(), "T-01", 1, PaymentStatus.UNPAID, FulfillmentStatus.CANCELLED,
+                sentRound.getSubtotal(), sentRound.getVatRate(), sentRound.getVatAmount(), sentRound.getGrandTotal(),
+                Instant.now(), Instant.now(), "Customer changed mind", List.of()
+        );
+        when(orderRoundMapper.toCashierRoundResponse(sentRound)).thenReturn(expectedResponse);
+
+        CashierRoundResponse response = cashierRoundService.cancel(sentRound.getId(), "Customer changed mind");
+
+        assertThat(sentRound.getFulfillmentStatus()).isEqualTo(FulfillmentStatus.CANCELLED);
     }
 }

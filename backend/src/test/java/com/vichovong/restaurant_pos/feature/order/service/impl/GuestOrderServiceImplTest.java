@@ -11,7 +11,8 @@ import com.vichovong.restaurant_pos.feature.menu.entity.MenuItem;
 import com.vichovong.restaurant_pos.feature.order.dto.GuestOrdersResponse;
 import com.vichovong.restaurant_pos.feature.order.dto.OrderRoundResponse;
 import com.vichovong.restaurant_pos.feature.order.entity.OrderRound;
-import com.vichovong.restaurant_pos.feature.order.entity.RoundStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.FulfillmentStatus;
+import com.vichovong.restaurant_pos.feature.order.entity.PaymentStatus;
 import com.vichovong.restaurant_pos.feature.order.mapper.OrderRoundMapper;
 import com.vichovong.restaurant_pos.feature.order.repository.OrderRoundRepository;
 import com.vichovong.restaurant_pos.feature.table.entity.SessionStatus;
@@ -138,7 +139,8 @@ class GuestOrderServiceImplTest {
         OrderRound round = new OrderRound();
         round.setId(UUID.randomUUID());
         round.setRoundNumber(1);
-        round.setStatus(RoundStatus.SENT);
+        round.setFulfillmentStatus(FulfillmentStatus.NEW);
+        round.setPaymentStatus(PaymentStatus.UNPAID);
         round.setGrandTotal(new BigDecimal("5.50"));
         when(orderRoundSnapshotter.snapshot(activeSession, 1, deviceId, List.of(line), priced))
                 .thenReturn(round);
@@ -147,7 +149,7 @@ class GuestOrderServiceImplTest {
                 .thenReturn(List.of(round));
 
         OrderRoundResponse roundResp = new OrderRoundResponse(
-                round.getId(), 1, RoundStatus.SENT,
+                round.getId(), 1, PaymentStatus.UNPAID, FulfillmentStatus.NEW,
                 new BigDecimal("5.00"), new BigDecimal("0.10"), new BigDecimal("0.50"), new BigDecimal("5.50"),
                 Instant.now(), List.of()
         );

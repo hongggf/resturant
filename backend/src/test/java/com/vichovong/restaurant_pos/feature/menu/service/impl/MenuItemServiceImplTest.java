@@ -166,7 +166,8 @@ class MenuItemServiceImplTest {
                 "USD",
                 "https://example.com/latte.jpg",
                 true,
-                category.getId()
+                category.getId(),
+                com.vichovong.restaurant_pos.feature.menu.entity.StationType.KITCHEN
         );
 
         when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
@@ -200,7 +201,8 @@ class MenuItemServiceImplTest {
                 "USD",
                 null,
                 true,
-                category.getId()
+                category.getId(),
+                com.vichovong.restaurant_pos.feature.menu.entity.StationType.KITCHEN
         );
 
         when(currencyRepository.findByCode("USD")).thenReturn(Optional.of(currency));
@@ -223,7 +225,8 @@ class MenuItemServiceImplTest {
                 "UNKNOWN",
                 null,
                 true,
-                category.getId()
+                category.getId(),
+                com.vichovong.restaurant_pos.feature.menu.entity.StationType.KITCHEN
         );
 
         when(currencyRepository.findByCode("UNKNOWN")).thenReturn(Optional.empty());
@@ -245,7 +248,8 @@ class MenuItemServiceImplTest {
                 "USD",
                 "https://example.com/mocha.jpg",
                 false,
-                category.getId()
+                category.getId(),
+                com.vichovong.restaurant_pos.feature.menu.entity.StationType.KITCHEN
         );
 
         when(menuItemRepository.findById(menuItem.getId())).thenReturn(Optional.of(menuItem));
@@ -264,15 +268,16 @@ class MenuItemServiceImplTest {
     @DisplayName("update: sets imageUrl to null when empty/blank string is provided")
     void update_blankImageUrl_setsImageUrlToNull() {
         MenuItemUpdateRequest request = new MenuItemUpdateRequest(
-                "Iced Latte",
-                "ឡាតេទឹកកក",
-                null,
-                null,
-                new BigDecimal("3.50"),
+                "Hot Latte",
+                "ឡាតេក្តៅ",
+                "With steamed milk",
+                "កាហ្វេក្តៅ",
+                new BigDecimal("3.00"),
                 "USD",
-                "   ",
-                true,
-                category.getId()
+                "",
+                false,
+                category.getId(),
+                com.vichovong.restaurant_pos.feature.menu.entity.StationType.KITCHEN
         );
 
         when(menuItemRepository.findById(menuItem.getId())).thenReturn(Optional.of(menuItem));
