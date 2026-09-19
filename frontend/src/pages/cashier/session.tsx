@@ -19,7 +19,6 @@ import { TransferDialog } from "@/features/sessions/components/transfer-dialog"
 import { RoundCard } from "@/features/sessions/components/round-card"
 import {
   useCancelRound,
-  useMarkRoundReady,
   useSessionRounds,
   useUpdateLineSelections,
   useVoidLine,
@@ -35,7 +34,6 @@ export function SessionPage() {
 
   const { data, isPending, isLoadingError, isRefetchError, error, refetch } =
     useSessionRounds(sessionId)
-  const markReady = useMarkRoundReady(sessionId)
   const cancelRound = useCancelRound(sessionId)
   const updateSelections = useUpdateLineSelections(sessionId)
   const voidLine = useVoidLine(sessionId)
@@ -59,7 +57,7 @@ export function SessionPage() {
   const tableNumber =
     rounds[0]?.tableNumber ?? location.state?.tableNumber ?? null
   const total = rounds
-    .filter((r) => r.status !== "CANCELLED")
+    .filter((r) => r.fulfillmentStatus !== "CANCELLED")
     .reduce((sum, r) => sum + (r.grandTotal ?? 0), 0)
 
   return (
@@ -178,10 +176,6 @@ export function SessionPage() {
               <RoundCard
                 key={round.id}
                 round={round}
-                markingReady={
-                  markReady.isPending && markReady.variables === round.id
-                }
-                onMarkReady={(r) => r.id && markReady.mutate(r.id)}
                 onCancel={setCancelling}
                 onVoidLine={(r, line) => setVoiding({ round: r, line })}
                 onEditLine={(r, line) => setEditing({ round: r, line })}

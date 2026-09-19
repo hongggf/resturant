@@ -7,7 +7,8 @@ describe('<GuestRoundCard />', () => {
   const mockRound: OrderRound = {
     id: 'round-1',
     roundNumber: 1,
-    status: 'SENT',
+    fulfillmentStatus: 'NEW',
+    paymentStatus: 'UNPAID',
     subtotal: 10,
     vatRate: 0.1,
     vatAmount: 1,
@@ -53,7 +54,8 @@ describe('<GuestRoundCard />', () => {
   it('renders CANCELLED status without footer totals', () => {
     const cancelledRound: OrderRound = {
       ...mockRound,
-      status: 'CANCELLED',
+      fulfillmentStatus: 'CANCELLED',
+      paymentStatus: 'UNPAID',
     }
 
     render(<GuestRoundCard round={cancelledRound} />)

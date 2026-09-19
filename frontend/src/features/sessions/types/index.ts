@@ -5,4 +5,4 @@ export type TableState = NonNullable<TableOverview["state"]>
 export type StaffSession = components["schemas"]["StaffSessionResponse"]
 export type CashierRound = components["schemas"]["CashierRoundResponse"]
 export type RoundLine = components["schemas"]["OrderRoundLineResponse"]
-export type RoundStatus = NonNullable<CashierRound["status"]>
+export type RoundStatus = "SENT" | "READY" | "COMPLETED" | "CANCELLED"

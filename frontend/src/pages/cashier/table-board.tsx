@@ -31,7 +31,7 @@ export function TableBoardPage() {
 
   const tables = data ?? []
   const occupied = tables.filter((t) => t.state !== "IDLE").length
-  const openRounds = tables.reduce((n, t) => n + (t.openRoundCount ?? 0), 0)
+  const openRounds = tables.reduce((n, t) => n + ((t.fulfillmentStatus === "NEW" || t.fulfillmentStatus === "COOKING" || t.fulfillmentStatus === "READY") ? 1 : 0), 0)
 
   function handleTableClick(table: TableOverview) {
     // Pass the table number along so a just-opened, empty session can

@@ -8,7 +8,9 @@ import { KitchenTicket } from "@/features/kitchen/components/kitchen-ticket"
 import { minutesWaiting } from "@/features/kitchen/lib/ticket-age"
 import {
   useKitchenQueue,
+  useStartCookingKitchenRound,
   useMarkKitchenRoundReady,
+  useBumpKitchenRound
 } from "@/features/kitchen/hooks/use-kitchen-queue"
 import type { CashierRound } from "@/features/sessions/types"
 
@@ -58,9 +60,9 @@ export function KitchenQueuePage() {
   const now = useNow()
   const { data, isPending, isLoadingError, isRefetchError, error, refetch } = useKitchenQueue("SENT")
   const { data: ready } = useKitchenQueue("READY", READY_REFETCH_MS)
+  const startCooking = useStartCookingKitchenRound()
   const markReady = useMarkKitchenRoundReady()
-
-  const [cookingIds, setCookingIds] = useState<Set<string>>(new Set())
+  const bump = useBumpKitchenRound()
 
   const rounds = data ?? []
   const readyRounds = ready ?? []
@@ -86,33 +88,22 @@ export function KitchenQueuePage() {
       playBeep()
     }
     seenIds.current = currentIds
-    
-    // Cleanup cookingIds that are no longer in SENT rounds
-    setCookingIds(prev => {
-      const next = new Set<string>()
-      for (const id of prev) {
-        if (currentIds.has(id)) next.add(id)
-      }
-      return next.size === prev.size ? prev : next
-    })
   }, [data])
 
   function handleStartCooking(round: CashierRound) {
-    if (round.id) {
-      setCookingIds(prev => {
-        const next = new Set(prev)
-        next.add(round.id!)
-        return next
-      })
-    }
+    if (round.id) startCooking.mutate(round.id)
   }
 
   function handleMarkReady(round: CashierRound) {
     if (round.id) markReady.mutate(round.id)
   }
 
-  const newRounds = rounds.filter(r => r.id && !cookingIds.has(r.id))
-  const cookingRounds = rounds.filter(r => r.id && cookingIds.has(r.id))
+  function handleBump(round: CashierRound) {
+    if (round.id) bump.mutate(round.id)
+  }
+
+  const newRounds = rounds.filter(r => r.fulfillmentStatus === 'NEW')
+  const cookingRounds = rounds.filter(r => r.fulfillmentStatus === 'COOKING')
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -240,6 +231,7 @@ export function KitchenQueuePage() {
                     now={now}
                     column="READY"
                     marking={false}
+                    onBump={handleBump}
                   />
                 ))
               )}

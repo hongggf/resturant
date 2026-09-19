@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   ChevronLeft,
   ChevronRight,
@@ -78,6 +78,12 @@ export function ModifierGroupsPage() {
   const totalPages = data?.totalPages ?? 0
   const totalElements = data?.totalElements ?? 0
 
+  useEffect(() => {
+    if (data && page > 0 && page >= totalPages) {
+      setPage(Math.max(0, totalPages - 1))
+    }
+  }, [data, page, totalPages])
+
   return (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -96,7 +102,7 @@ export function ModifierGroupsPage() {
         </Button>
       </div>
 
-      {isPending ? (
+      {isPending || (totalElements > 0 && groups.length === 0) ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="h-64 w-full rounded-xl" />
@@ -117,7 +123,7 @@ export function ModifierGroupsPage() {
             </Button>
           </AlertDescription>
         </Alert>
-      ) : groups.length === 0 ? (
+      ) : totalElements === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">

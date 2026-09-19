@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ChevronLeft, ChevronRight, ImageOff, UtensilsCrossed, X } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -86,6 +86,13 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
 
   const items = data?.content ?? []
   const totalPages = data?.totalPages ?? 0
+  const totalElements = data?.totalElements ?? 0
+
+  useEffect(() => {
+    if (data && page > 0 && page >= totalPages) {
+      setPage(Math.max(0, totalPages - 1))
+    }
+  }, [data, page, totalPages])
 
   function pickCategory(id: string | undefined) {
     setCategoryId(id)
@@ -123,7 +130,7 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
         {t("pricesBeforeVat")}
       </div>
 
-      {isPending ? (
+      {isPending || (totalElements > 0 && items.length === 0) ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="aspect-[4/3] rounded-xl" />
@@ -144,7 +151,7 @@ export function GuestMenuBrowser({ onPick }: GuestMenuBrowserProps) {
             </Button>
           </AlertDescription>
         </Alert>
-      ) : items.length === 0 ? (
+      ) : totalElements === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">

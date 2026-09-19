@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ChevronLeft, ChevronRight, LayoutGrid, Plus } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -42,6 +42,12 @@ export function TablesPage() {
   const totalPages = data?.totalPages ?? 0
   const totalElements = data?.totalElements ?? 0
 
+  useEffect(() => {
+    if (data && page > 0 && page >= totalPages) {
+      setPage(Math.max(0, totalPages - 1))
+    }
+  }, [data, page, totalPages])
+
   // Resolve from fresh list data so the QR dialog updates after regeneration.
   const qrTable = tables.find((t) => t.id === qrTableId) ?? null
 
@@ -62,7 +68,7 @@ export function TablesPage() {
         )}
       </div>
 
-      {isPending ? (
+      {isPending || (totalElements > 0 && tables.length === 0) ? (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           {Array.from({ length: 5 }, (_, i) => (
@@ -84,7 +90,7 @@ export function TablesPage() {
             </Button>
           </AlertDescription>
         </Alert>
-      ) : tables.length === 0 ? (
+      ) : totalElements === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">

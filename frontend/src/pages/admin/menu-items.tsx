@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   ChevronLeft,
   ChevronRight,
@@ -94,6 +94,12 @@ export function MenuItemsPage() {
   const totalElements = data?.totalElements ?? 0
   const filtered = categoryId !== ALL || availability !== ALL
 
+  useEffect(() => {
+    if (data && page > 0 && page >= totalPages) {
+      setPage(Math.max(0, totalPages - 1))
+    }
+  }, [data, page, totalPages])
+
   return (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -147,7 +153,7 @@ export function MenuItemsPage() {
         </Select>
       </div>
 
-      {isPending ? (
+      {isPending || (totalElements > 0 && items.length === 0) ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }, (_, i) => (
             <Skeleton key={i} className="aspect-[4/3] w-full rounded-xl" />
@@ -168,7 +174,7 @@ export function MenuItemsPage() {
             </Button>
           </AlertDescription>
         </Alert>
-      ) : items.length === 0 ? (
+      ) : totalElements === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">

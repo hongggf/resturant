@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ChevronLeft, ChevronRight, Plus, Tags } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -40,6 +40,12 @@ export function CategoriesPage() {
   const totalPages = data?.totalPages ?? 0
   const totalElements = data?.totalElements ?? 0
 
+  useEffect(() => {
+    if (data && page > 0 && page >= totalPages) {
+      setPage(Math.max(0, totalPages - 1))
+    }
+  }, [data, page, totalPages])
+
   return (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -57,7 +63,7 @@ export function CategoriesPage() {
         )}
       </div>
 
-      {isPending ? (
+      {isPending || (totalElements > 0 && categories.length === 0) ? (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           {Array.from({ length: 5 }, (_, i) => (
@@ -79,7 +85,7 @@ export function CategoriesPage() {
             </Button>
           </AlertDescription>
         </Alert>
-      ) : categories.length === 0 ? (
+      ) : totalElements === 0 ? (
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">

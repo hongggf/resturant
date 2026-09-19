@@ -5,9 +5,6 @@ export function getSessionRounds(sessionId: string) {
   return apiFetch<CashierRound[]>(`/sessions/${sessionId}/rounds`)
 }
 
-export function markRoundReady(roundId: string) {
-  return apiFetch<CashierRound>(`/rounds/${roundId}/ready`, { method: "PUT" })
-}
 
 export function cancelRound(roundId: string, reason: string) {
   return apiFetch<CashierRound>(`/rounds/${roundId}/cancel`, {

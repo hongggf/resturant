@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Ban, CheckCheck, ChevronDown, ChevronRight, Pencil } from "lucide-react"
+import { Ban, ChevronDown, ChevronRight, Pencil } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
@@ -13,7 +13,6 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
-import { Spinner } from "@/components/ui/spinner"
 import {
   Tooltip,
   TooltipContent,
@@ -81,8 +80,6 @@ function RoundLineItem({ line }: RoundLineItemProps) {
 
 interface RoundCardProps {
   round: CashierRound
-  markingReady: boolean
-  onMarkReady: (round: CashierRound) => void
   onCancel: (round: CashierRound) => void
   onEditLine: (round: CashierRound, line: RoundLine) => void
   onVoidLine: (round: CashierRound, line: RoundLine) => void
@@ -90,13 +87,11 @@ interface RoundCardProps {
 
 export function RoundCard({
   round,
-  markingReady,
-  onMarkReady,
   onCancel,
   onEditLine,
   onVoidLine,
 }: RoundCardProps) {
-  const status: RoundStatus = round.status ?? "SENT"
+  const status: RoundStatus = round.fulfillmentStatus === "CANCELLED" ? "CANCELLED" : round.paymentStatus === "PAID" ? "COMPLETED" : round.fulfillmentStatus === "READY" ? "READY" : "SENT"
   const open = status === "SENT" || status === "READY"
   const cancelled = status === "CANCELLED"
   const editableLines = (round.lines ?? []).filter(
@@ -230,16 +225,6 @@ export function RoundCard({
                   >
                     <Ban className="size-3.5 mr-1" />
                     Cancel
-                  </Button>
-                )}
-                {status === "SENT" && (
-                  <Button
-                    size="sm"
-                    disabled={markingReady}
-                    onClick={() => onMarkReady(round)}
-                  >
-                    {markingReady ? <Spinner className="size-3.5 mr-1" /> : <CheckCheck className="size-3.5 mr-1" />}
-                    Mark ready
                   </Button>
                 )}
               </div>

@@ -8,7 +8,7 @@ import { ModifierBreakdown } from "@/features/sessions/components/modifier-break
 
 /** Itemized bill: every non-cancelled round's lines, then session totals. */
 export function BillSummary({ bill }: { bill: Bill }) {
-  const rounds = (bill.rounds ?? []).filter((r) => r.status !== "CANCELLED")
+  const rounds = (bill.rounds ?? []).filter((r) => r.fulfillmentStatus !== "CANCELLED")
 
   return (
     <div className="space-y-3">

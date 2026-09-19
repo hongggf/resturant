@@ -785,7 +785,9 @@ export interface components {
             /** Format: int32 */
             roundNumber?: number;
             /** @enum {string} */
-            status?: "SENT" | "READY" | "COMPLETED" | "CANCELLED";
+            paymentStatus?: "UNPAID" | "PAID";
+            /** @enum {string} */
+            fulfillmentStatus?: "NEW" | "COOKING" | "READY" | "SERVED" | "CANCELLED";
             subtotal?: number;
             vatRate?: number;
             vatAmount?: number;
@@ -1101,7 +1103,9 @@ export interface components {
             /** Format: int32 */
             roundNumber?: number;
             /** @enum {string} */
-            status?: "SENT" | "READY" | "COMPLETED" | "CANCELLED";
+            paymentStatus?: "UNPAID" | "PAID";
+            /** @enum {string} */
+            fulfillmentStatus?: "NEW" | "COOKING" | "READY" | "SERVED" | "CANCELLED";
             subtotal?: number;
             vatRate?: number;
             vatAmount?: number;
@@ -1297,8 +1301,8 @@ export interface components {
             state?: "IDLE" | "ORDERED" | "SERVED";
             /** Format: uuid */
             sessionId?: string;
-            /** Format: int32 */
-            openRoundCount?: number;
+            /** @enum {string} */
+            fulfillmentStatus?: "NEW" | "COOKING" | "READY" | "SERVED";
             runningTotal?: number;
             /** Format: uuid */
             lastClosedSessionId?: string;

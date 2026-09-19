@@ -98,6 +98,7 @@ interface KitchenTicketProps {
   marking: boolean
   onStartCooking?: (round: CashierRound) => void
   onMarkReady?: (round: CashierRound) => void
+  onBump?: (round: CashierRound) => void
 }
 
 export function KitchenTicket({
@@ -107,6 +108,7 @@ export function KitchenTicket({
   marking,
   onStartCooking,
   onMarkReady,
+  onBump,
 }: KitchenTicketProps) {
   const waited = minutesWaiting(round.sentAt, now)
   const urgent = waited >= URGENT_AFTER_MIN
@@ -173,11 +175,20 @@ export function KitchenTicket({
           </Button>
         )}
         
-        {column === "READY" && (
+        {column === "READY" && onBump ? (
+          <Button
+            size="lg"
+            className="h-14 w-full text-lg font-semibold bg-gray-600 hover:bg-gray-700 text-white"
+            onClick={() => onBump(round)}
+          >
+            <CheckCheck className="mr-2 size-5" />
+            Bump
+          </Button>
+        ) : column === "READY" ? (
           <div className="w-full text-center py-2 rounded bg-emerald-500/10 text-emerald-700 font-semibold border border-emerald-500/20">
             Ready to Serve
           </div>
-        )}
+        ) : null}
       </CardFooter>
     </Card>
   )

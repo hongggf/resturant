@@ -20,7 +20,7 @@ const timeFormat = new Intl.DateTimeFormat(undefined, {
 export function GuestRoundCard({ round }: { round: OrderRound }) {
   const { language, t } = useLanguage()
   const isKhmer = language === "km"
-  const status = round.status ?? "SENT"
+  const status = round.fulfillmentStatus === "CANCELLED" ? "CANCELLED" : round.paymentStatus === "PAID" ? "COMPLETED" : round.fulfillmentStatus === "READY" ? "READY" : "SENT"
   const cancelled = status === "CANCELLED"
   const statusLabel = isKhmer
     ? status === "SENT"

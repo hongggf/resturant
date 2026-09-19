@@ -5,7 +5,6 @@ import type { ApiError } from "@/lib/api/client"
 import {
   cancelRound,
   getSessionRounds,
-  markRoundReady,
   updateRoundLineSelections,
   voidRoundLine,
 } from "../api/rounds"
@@ -27,18 +26,6 @@ function useInvalidateRounds(sessionId: string) {
     queryClient.invalidateQueries({ queryKey: ["sessions", sessionId] })
     queryClient.invalidateQueries({ queryKey: ["tables", "overview"] })
   }
-}
-
-export function useMarkRoundReady(sessionId: string) {
-  const invalidate = useInvalidateRounds(sessionId)
-  return useMutation({
-    mutationFn: markRoundReady,
-    onSuccess: (round) => {
-      invalidate()
-      toast.success(`Round #${round.roundNumber} marked ready`)
-    },
-    onError: (error: ApiError) => toast.error(error.message),
-  })
 }
 
 export function useCancelRound(sessionId: string) {

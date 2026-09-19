@@ -5,7 +5,7 @@ import { formatPrice } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { TableOverview } from "../types"
 
-export type DerivedTableState = "IDLE" | "OCCUPIED" | "WAITING" | "READY_TO_PAY"
+export type DerivedTableState = "IDLE" | "OCCUPIED" | "WAITING" | "READY_TO_SERVE" | "READY_TO_PAY"
 
 const stateStyles: Record<DerivedTableState, { card: string; badge: string }> = {
   IDLE: {
@@ -13,22 +13,29 @@ const stateStyles: Record<DerivedTableState, { card: string; badge: string }> = 
     badge: "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
   },
   OCCUPIED: {
-    card: "border-indigo-500/50 bg-indigo-500/5 hover:border-indigo-500",
-    badge: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-400",
+    card: "border-indigo-300 bg-indigo-50 hover:border-indigo-500 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:hover:border-indigo-500",
+    badge: "bg-indigo-600 text-white",
   },
   WAITING: {
-    card: "border-amber-500/50 bg-amber-500/5 hover:border-amber-500",
-    badge: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+    card: "border-amber-400 bg-amber-100 hover:border-amber-500 dark:border-amber-500/60 dark:bg-amber-500/20 dark:hover:border-amber-400",
+    badge: "bg-amber-500 text-white",
+  },
+  READY_TO_SERVE: {
+    card: "border-blue-300 bg-blue-50 hover:border-blue-500 dark:border-blue-500/40 dark:bg-blue-500/10 dark:hover:border-blue-500",
+    badge: "bg-blue-600 text-white",
   },
   READY_TO_PAY: {
-    card: "border-emerald-500/50 bg-emerald-500/5 hover:border-emerald-500",
-    badge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+    card: "border-emerald-400 bg-emerald-100 hover:border-emerald-500 dark:border-emerald-500/60 dark:bg-emerald-500/20 dark:hover:border-emerald-400",
+    badge: "bg-emerald-500 text-white",
   },
 }
 
 function getDerivedState(table: TableOverview): DerivedTableState {
   if (table.state === "IDLE" || !table.sessionId) return "IDLE"
-  if (table.openRoundCount && table.openRoundCount > 0) return "WAITING"
+  // Most-urgent-wins (backend rolls rounds up NEW > COOKING > READY):
+  // amber while the kitchen is working, blue when food is at the pass.
+  if (table.fulfillmentStatus === "NEW" || table.fulfillmentStatus === "COOKING") return "WAITING"
+  if (table.fulfillmentStatus === "READY") return "READY_TO_SERVE"
   if (table.runningTotal && table.runningTotal > 0) return "READY_TO_PAY"
   return "OCCUPIED"
 }
@@ -43,7 +50,6 @@ interface TableBoardCardProps {
 export function TableBoardCard({ table, busy, onClick, selected }: TableBoardCardProps) {
   const state = getDerivedState(table)
   const styles = stateStyles[state]
-  const rounds = table.openRoundCount ?? 0
 
   return (
     <div
@@ -86,7 +92,7 @@ export function TableBoardCard({ table, busy, onClick, selected }: TableBoardCar
           styles.badge
         )}
       >
-        {state === "READY_TO_PAY" ? "READY" : state}
+        {state === "READY_TO_PAY" ? "READY" : state === "READY_TO_SERVE" ? "AT PASS" : state}
       </span>
       <span className="text-sm font-semibold tabular-nums">
         {state === "IDLE" ? "—" : formatPrice(table.runningTotal ?? 0)}
@@ -97,7 +103,7 @@ export function TableBoardCard({ table, busy, onClick, selected }: TableBoardCar
         <span className="text-muted-foreground text-[10px]">Tap to open</span>
       ) : (
         <span className="text-muted-foreground text-[10px]">
-          {rounds === 1 ? "1 open round" : `${rounds} open rounds`}
+          {table.fulfillmentStatus ? `Status: ${table.fulfillmentStatus}` : '—'}
         </span>
       )}
     </div>
