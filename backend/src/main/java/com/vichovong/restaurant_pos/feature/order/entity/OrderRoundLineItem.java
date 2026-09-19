@@ -75,6 +75,14 @@ public class OrderRoundLineItem extends BaseEntity {
     @OneToMany(mappedBy = "orderRoundLineItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderRoundModifierSelection> selections = new ArrayList<>();
 
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private LineItemStatus status = LineItemStatus.SENT;
+
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private com.vichovong.restaurant_pos.feature.menu.entity.StationType station = com.vichovong.restaurant_pos.feature.menu.entity.StationType.KITCHEN;
+
     public boolean isVoided() {
         return voidedAt != null;
     }

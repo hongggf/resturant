@@ -52,8 +52,12 @@ public class OrderRound extends BaseEntity {
     private UUID deviceId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private RoundStatus status = RoundStatus.SENT;
+    @Column(name = "payment_status", nullable = false, length = 20)
+    private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "fulfillment_status", nullable = false, length = 20)
+    private FulfillmentStatus fulfillmentStatus = FulfillmentStatus.NEW;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;

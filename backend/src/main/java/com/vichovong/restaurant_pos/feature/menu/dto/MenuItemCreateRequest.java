@@ -17,6 +17,7 @@ public record MenuItemCreateRequest(
         @NotBlank String currencyCode,
         @Size(max = 500) String imageUrl,
         boolean available,
-        @NotNull UUID categoryId
+        @NotNull UUID categoryId,
+        @NotNull com.vichovong.restaurant_pos.feature.menu.entity.StationType station
 ) {
 }

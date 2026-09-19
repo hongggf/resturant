@@ -17,6 +17,7 @@ public record MenuItemResponse(
         UUID categoryId,
         String categoryNameEn,
         boolean categoryAllowNotes,
+        com.vichovong.restaurant_pos.feature.menu.entity.StationType station,
         Instant createdAt,
         Instant updatedAt
 ) {

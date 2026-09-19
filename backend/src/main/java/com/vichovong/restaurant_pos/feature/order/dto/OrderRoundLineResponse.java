@@ -17,6 +17,8 @@ public record OrderRoundLineResponse(
         String remark,
         boolean voided,
         String voidReason,
+        com.vichovong.restaurant_pos.feature.order.entity.LineItemStatus status,
+        com.vichovong.restaurant_pos.feature.menu.entity.StationType station,
         List<OrderRoundSelectionResponse> selections
 ) {
 }
