@@ -53,6 +53,7 @@ function toValues(item?: MenuItem): MenuItemValues {
     price: item?.price ?? 0,
     currencyCode: item?.currencyCode ?? "USD",
     categoryId: item?.categoryId ?? "",
+    station: item?.station ?? "KITCHEN",
     available: item?.available ?? true,
   }
 }
@@ -127,30 +128,54 @@ export function MenuItemFormDialog({
                 <FieldError errors={[errors.nameKm]} />
               </Field>
             </div>
-            <Field data-invalid={!!errors.categoryId}>
-              <FieldLabel>Category</FieldLabel>
-              <Select
-                value={form.watch("categoryId")}
-                onValueChange={(value) =>
-                  form.setValue("categoryId", value, { shouldValidate: true })
-                }
-              >
-                <SelectTrigger
-                  className="w-full"
-                  aria-invalid={!!errors.categoryId}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field data-invalid={!!errors.categoryId}>
+                <FieldLabel>Category</FieldLabel>
+                <Select
+                  value={form.watch("categoryId")}
+                  onValueChange={(value) =>
+                    form.setValue("categoryId", value, { shouldValidate: true })
+                  }
                 >
-                  <SelectValue placeholder="Choose a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(categories.data ?? []).map((category) => (
-                    <SelectItem key={category.id} value={category.id!}>
-                      {category.nameEn}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FieldError errors={[errors.categoryId]} />
-            </Field>
+                  <SelectTrigger
+                    className="w-full"
+                    aria-invalid={!!errors.categoryId}
+                  >
+                    <SelectValue placeholder="Choose a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(categories.data ?? []).map((category) => (
+                      <SelectItem key={category.id} value={category.id!}>
+                        {category.nameEn}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldError errors={[errors.categoryId]} />
+              </Field>
+
+              <Field data-invalid={!!errors.station}>
+                <FieldLabel>Station</FieldLabel>
+                <Select
+                  value={form.watch("station")}
+                  onValueChange={(value) =>
+                    form.setValue("station", value as "KITCHEN" | "COUNTER", { shouldValidate: true })
+                  }
+                >
+                  <SelectTrigger
+                    className="w-full"
+                    aria-invalid={!!errors.station}
+                  >
+                    <SelectValue placeholder="Select a station" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="KITCHEN">Kitchen</SelectItem>
+                    <SelectItem value="COUNTER">Counter</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FieldError errors={[errors.station]} />
+              </Field>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field data-invalid={!!errors.price}>
                 <FieldLabel htmlFor="price">Price</FieldLabel>
