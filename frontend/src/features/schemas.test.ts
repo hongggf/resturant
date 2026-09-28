@@ -121,6 +121,7 @@ describe('Form Validation Schemas', () => {
         currencyCode: 'USD',
         categoryId: 'cat-123',
         available: true,
+        station: 'KITCHEN',
       })
       expect(result.success).toBe(true)
     })
@@ -135,6 +136,7 @@ describe('Form Validation Schemas', () => {
         currencyCode: 'USD',
         categoryId: 'cat-123',
         available: true,
+        station: 'KITCHEN',
       })
       expect(result.success).toBe(false)
     })

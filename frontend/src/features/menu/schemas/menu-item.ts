@@ -6,7 +6,7 @@ export const menuItemSchema = z.object({
   descriptionEn: z.string(),
   descriptionKm: z.string(),
   price: z
-    .number({ invalid_type_error: "Price must be a number" })
+    .number()
     .min(0, "Price can't be negative"),
   currencyCode: z.string().min(1, "Currency is required"),
   categoryId: z.string().min(1, "Category is required"),

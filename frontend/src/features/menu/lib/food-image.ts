@@ -72,7 +72,7 @@ const KNOWN_FOOD_IMAGES: Record<string, string> = {
  */
 export type FoodImageSize = "hero" | "card" | "thumb"
 
-const BARE_FOOD_IMAGE = /^\/(food-images|uploads)\/([^/]+)$/
+const BARE_FOOD_IMAGE = /^((?:https?:\/\/[^\/]+)?)\/((?:food-images|uploads).*)\/([^/]+)$/
 
 /**
  * Points a bare `/food-images/x.jpg` or `/uploads/x.jpg` at the variant for `size`. Hero is served
@@ -81,7 +81,7 @@ const BARE_FOOD_IMAGE = /^\/(food-images|uploads)\/([^/]+)$/
  */
 function sizedFoodImage(path: string, size: FoodImageSize): string {
   if (size === "hero") return path
-  return path.replace(BARE_FOOD_IMAGE, `/$1/${size}/$2`)
+  return path.replace(BARE_FOOD_IMAGE, `$1/$2/${size}/$3`)
 }
 
 /**

@@ -58,7 +58,7 @@ function useNow() {
 
 export function KitchenQueuePage() {
   const now = useNow()
-  const { data, isPending, isLoadingError, isRefetchError, error, refetch } = useKitchenQueue("SENT")
+  const { data, isPending, isLoadingError, isRefetchError, error, refetch } = useKitchenQueue("SENT,COOKING")
   const { data: ready } = useKitchenQueue("READY", READY_REFETCH_MS)
   const startCooking = useStartCookingKitchenRound()
   const markReady = useMarkKitchenRoundReady()

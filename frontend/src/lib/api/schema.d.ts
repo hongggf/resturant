@@ -905,6 +905,7 @@ export interface components {
             available?: boolean;
             /** Format: uuid */
             categoryId: string;
+            station?: "KITCHEN" | "COUNTER";
         };
         ApiResponseMenuItemResponse: {
             success?: boolean;
@@ -928,6 +929,7 @@ export interface components {
             categoryId?: string;
             categoryNameEn?: string;
             categoryAllowNotes?: boolean;
+            station?: "KITCHEN" | "COUNTER";
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -1162,6 +1164,7 @@ export interface components {
             available?: boolean;
             /** Format: uuid */
             categoryId: string;
+            station?: "KITCHEN" | "COUNTER";
         };
         AttachModifierGroupRequest: {
             /** Format: uuid */

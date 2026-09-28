@@ -320,7 +320,7 @@ class MenuItemServiceImplTest {
                 "file",
                 "photo.png",
                 "image/png",
-                "image-content-bytes".getBytes()
+                java.util.Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==")
         );
 
         MenuItemResponse response = menuItemService.uploadImage(menuItem.getId(), file);

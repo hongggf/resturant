@@ -5,7 +5,6 @@ import lombok.Data;
 @Data
 public class GuestPromoDto {
     private String title;
-    private String description;
     private String imageUrl;
     private boolean isActive;
 }

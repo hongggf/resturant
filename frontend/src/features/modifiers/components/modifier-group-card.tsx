@@ -18,6 +18,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { formatPrice } from "@/lib/format"
+import { assetUrl } from "@/lib/api/client"
 import { choiceRule } from "../lib/choice-rule"
 import type { ModifierGroup } from "../types"
 
@@ -85,18 +86,25 @@ export function ModifierGroupCard({
           {options.slice(0, VISIBLE_OPTIONS).map((option) => (
             <li
               key={option.id}
-              className="flex items-baseline justify-between gap-2"
+              className="flex items-center justify-between gap-2"
             >
-              <span
-                className={
-                  option.available === false
-                    ? "text-muted-foreground truncate line-through"
-                    : "truncate"
-                }
-              >
-                {option.nameEn}
-              </span>
-              <span className="text-muted-foreground tabular-nums">
+              <div className="flex items-center gap-2 truncate">
+                {option.imageUrl ? (
+                  <img src={assetUrl(option.imageUrl) || ""} alt="" className="size-5 rounded object-cover border" />
+                ) : (
+                  <div className="size-5 rounded border bg-muted" />
+                )}
+                <span
+                  className={
+                    option.available === false
+                      ? "text-muted-foreground truncate line-through"
+                      : "truncate"
+                  }
+                >
+                  {option.nameEn}
+                </span>
+              </div>
+              <span className="text-muted-foreground tabular-nums shrink-0">
                 {option.unitPrice
                   ? `+${formatPrice(option.unitPrice, "USD")}`
                   : "Free"}

@@ -69,3 +69,16 @@ export function detachModifierGroup(
     { method: "DELETE" }
   )
 }
+
+export function uploadModifierOptionImage(
+  groupId: string,
+  optionId: string,
+  file: File
+) {
+  const formData = new FormData()
+  formData.append("file", file)
+  return apiFetch<any>(`/modifier-groups/${groupId}/options/${optionId}/image`, {
+    method: "POST",
+    body: formData,
+  })
+}

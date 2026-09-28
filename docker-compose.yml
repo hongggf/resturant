@@ -10,7 +10,7 @@ services:
     ports:
       - "5435:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pos_user} -d ${POSTGRES_DB:-restaurant_pos}"]
       interval: 5s
@@ -42,7 +42,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in .env}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://vongpos.com,http://localhost:*,http://127.0.0.1:*}
     volumes:
-      - uploads_data:/app/uploads
+      - ./data/uploads:/app/uploads
     expose:
       - "8080"
     healthcheck:
@@ -85,6 +85,3 @@ services:
         max-size: "10m"
         max-file: "3"
 
-volumes:
-  pgdata:
-  uploads_data:

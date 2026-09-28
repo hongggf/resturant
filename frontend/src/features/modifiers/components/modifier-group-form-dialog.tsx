@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
 import { useFieldArray, useForm, type FieldErrors } from "react-hook-form"
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
+import { assetUrl } from "@/lib/api/client"
+import { uploadModifierOptionImage } from "../api/modifier-groups"
 import {
   useCreateModifierGroup,
   useUpdateModifierGroup,
@@ -93,16 +95,38 @@ export function ModifierGroupFormDialog({
   const update = useUpdateModifierGroup()
   const isPending = create.isPending || update.isPending
 
+  const [optionImages, setOptionImages] = useState<Record<number, File>>({})
+
   useEffect(() => {
-    if (open) form.reset(toValues(group))
+    if (open) {
+      form.reset(toValues(group))
+      setOptionImages({})
+    }
   }, [open, group, form])
 
   function onSubmit(values: ModifierGroupValues) {
-    const done = { onSuccess: () => onOpenChange(false) }
+    const handleUploads = async (savedGroup: ModifierGroup) => {
+      try {
+        const uploadPromises = (savedGroup.options || []).map((opt) => {
+          const file = optionImages[opt.sortOrder!]
+          if (file && opt.id) {
+            return uploadModifierOptionImage(savedGroup.id!, opt.id, file)
+          }
+          return Promise.resolve()
+        })
+        await Promise.all(uploadPromises)
+      } catch (error) {
+        console.error("Failed to upload option images", error)
+        toast.error("Group saved, but failed to upload some option images.")
+      } finally {
+        onOpenChange(false)
+      }
+    }
+
     if (group?.id) {
-      update.mutate({ id: group.id, body: toRequest(values) }, done)
+      update.mutate({ id: group.id, body: toRequest(values) }, { onSuccess: handleUploads })
     } else {
-      create.mutate(toRequest(values), done)
+      create.mutate(toRequest(values), { onSuccess: handleUploads })
     }
   }
 
@@ -199,7 +223,8 @@ export function ModifierGroupFormDialog({
                   Add option
                 </Button>
               </div>
-              <div className="text-muted-foreground grid grid-cols-[1fr_1fr_5.5rem_2.5rem_2rem] gap-2 text-xs">
+              <div className="text-muted-foreground grid grid-cols-[4rem_1fr_1fr_5.5rem_2.5rem_2rem] gap-2 text-xs">
+                <span>Image</span>
                 <span>English</span>
                 <span>Khmer</span>
                 <span>Price</span>
@@ -211,7 +236,28 @@ export function ModifierGroupFormDialog({
                   const rowErrors = errors.options?.[index]
                   return (
                     <div key={field.id}>
-                      <div className="grid grid-cols-[1fr_1fr_5.5rem_2.5rem_2rem] items-center gap-2">
+                      <div className="grid grid-cols-[4rem_1fr_1fr_5.5rem_2.5rem_2rem] items-center gap-2">
+                        <div className="relative h-9 w-full overflow-hidden rounded-md border bg-muted group/img">
+                          {optionImages[index] ? (
+                            <img src={URL.createObjectURL(optionImages[index])} alt="preview" className="h-full w-full object-cover" />
+                          ) : field.imageUrl ? (
+                            <img src={assetUrl(field.imageUrl) || undefined} alt="preview" className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">Img</span>
+                          )}
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            title="Upload image"
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setOptionImages(prev => ({ ...prev, [index]: file }));
+                              }
+                            }}
+                          />
+                        </div>
                         <Input
                           placeholder="50%"
                           aria-label={`Option ${index + 1} English name`}
@@ -249,7 +295,14 @@ export function ModifierGroupFormDialog({
                           variant="ghost"
                           size="icon"
                           disabled={options.fields.length === 1}
-                          onClick={() => options.remove(index)}
+                          onClick={() => {
+                            options.remove(index)
+                            setOptionImages(prev => {
+                              const next = { ...prev }
+                              delete next[index]
+                              return next
+                            })
+                          }}
                         >
                           <Trash2 />
                           <span className="sr-only">

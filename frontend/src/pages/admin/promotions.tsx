@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -27,7 +26,6 @@ import { resolveItemImage } from "@/features/menu/lib/food-image"
 
 function PromoFormDialog({ open, onOpenChange, promo }: { open: boolean, onOpenChange: (o: boolean) => void, promo?: GuestPromo }) {
   const [title, setTitle] = useState(promo?.title ?? "")
-  const [description, setDescription] = useState(promo?.description ?? "")
   const [active, setActive] = useState(promo?.active ?? false)
   const [imageFile, setImageFile] = useState<File | undefined>()
   const [imageUrl] = useState(promo?.imageUrl ?? "")
@@ -39,7 +37,7 @@ function PromoFormDialog({ open, onOpenChange, promo }: { open: boolean, onOpenC
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const dto: GuestPromoDto = { title, description, active, imageUrl }
+    const dto: GuestPromoDto = { title, description: "", active, imageUrl }
     if (promo) {
       update.mutate({ id: promo.id, dto, image: imageFile }, { onSuccess: () => onOpenChange(false) })
     } else {
@@ -62,15 +60,26 @@ function PromoFormDialog({ open, onOpenChange, promo }: { open: boolean, onOpenC
             <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
           </Field>
           <Field>
-            <FieldLabel>Description</FieldLabel>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} required />
-          </Field>
-          <Field>
-            <FieldLabel>Image</FieldLabel>
-            {imageUrl && !imageFile && (
-              <img src={assetUrl(resolveItemImage(undefined, imageUrl, "card") || imageUrl) || ""} alt="" className="h-24 w-24 object-cover rounded" />
-            )}
-            <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0])} />
+            <FieldLabel htmlFor="promo-image">Image</FieldLabel>
+            <div className="flex items-center gap-4">
+              {imageUrl && !imageFile && (
+                <img src={assetUrl(resolveItemImage(undefined, imageUrl, "card") || imageUrl) || ""} alt="" className="h-24 w-24 object-cover rounded" />
+              )}
+              {imageFile && (
+                <div className="bg-muted h-24 w-24 rounded-md flex flex-col items-center justify-center text-xs text-muted-foreground p-2">
+                  <span className="font-semibold text-foreground text-center line-clamp-2">{imageFile.name}</span>
+                  <span className="mt-1">Ready</span>
+                </div>
+              )}
+              <div className="flex-1">
+                <Input id="promo-image" type="file" accept="image/*" className={(imageUrl || imageFile) ? "hidden" : ""} onChange={(e) => setImageFile(e.target.files?.[0])} />
+                {(imageUrl || imageFile) && (
+                  <Button type="button" variant="outline" size="sm" asChild>
+                    <label htmlFor="promo-image" className="cursor-pointer">Change Image</label>
+                  </Button>
+                )}
+              </div>
+            </div>
           </Field>
           <Field orientation="horizontal">
             <Switch checked={active} onCheckedChange={setActive} />
@@ -118,7 +127,6 @@ export function PromotionsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">{promo.description}</p>
               <div className="mt-4 flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => { setEditingPromo(promo); setDialogOpen(true) }}>Edit</Button>
                 <Button variant="destructive" size="sm" onClick={() => deletePromo.mutate(promo.id)}>Delete</Button>

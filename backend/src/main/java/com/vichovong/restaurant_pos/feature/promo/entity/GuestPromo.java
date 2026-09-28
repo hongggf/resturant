@@ -26,7 +26,6 @@ public class GuestPromo {
     private Long id;
 
     private String title;
-    private String description;
     private String imageUrl;
     
     @Builder.Default

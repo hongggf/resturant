@@ -34,12 +34,45 @@ interface GuestMenuBrowserProps {
 
 function PromoPopup() {
   const { data: promo } = useActivePromo()
-  const [showPromo, setShowPromo] = useState(true)
+  const [showPromo, setShowPromo] = useState(false)
+
+  useEffect(() => {
+    if (promo?.active && promo.id) {
+      try {
+        const sessionKey = `promo_dismissed_${promo.id}`
+        if (!sessionStorage.getItem(sessionKey)) {
+          setShowPromo(true)
+        }
+      } catch {
+        setShowPromo(true)
+      }
+    }
+  }, [promo?.id, promo?.active])
 
   if (!promo || !promo.active || !showPromo) return null
 
+  const handleDismiss = () => {
+    if (promo?.id) {
+      try {
+        sessionStorage.setItem(`promo_dismissed_${promo.id}`, "true")
+      } catch {
+        // ignore storage error
+      }
+    }
+    setShowPromo(false)
+  }
+
   return (
-    <Dialog open={showPromo} onOpenChange={setShowPromo}>
+    <Dialog
+      open={showPromo}
+      onOpenChange={(open) => {
+        if (!open) {
+          handleDismiss()
+        } else {
+          setShowPromo(true)
+        }
+      }}
+    >
       <DialogContent showCloseButton={false} className="max-w-sm border-0 p-0 overflow-hidden bg-transparent shadow-none">
         <div className="relative overflow-hidden rounded-3xl bg-background shadow-2xl ring-1 ring-black/5">
           <DialogHeader className="sr-only">
@@ -60,7 +93,7 @@ function PromoPopup() {
 
           <button
             type="button"
-            onClick={() => setShowPromo(false)}
+            onClick={handleDismiss}
             className="absolute right-3 top-3 z-10 rounded-full bg-black/40 p-2 text-white shadow-md backdrop-blur-md transition-colors hover:bg-black/60 active:scale-95"
           >
             <X className="size-5" />

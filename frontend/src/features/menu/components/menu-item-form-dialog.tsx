@@ -237,21 +237,37 @@ export function MenuItemFormDialog({
             </Field>
             <Field>
               <FieldLabel htmlFor="image">Image</FieldLabel>
-              {currentImage && !imageFile && (
-                <img
-                  src={currentImage}
-                  alt={item?.nameEn}
-                  className="bg-muted h-24 w-32 rounded-md object-cover"
-                />
-              )}
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={(event) =>
-                  setImageFile(event.target.files?.[0] ?? undefined)
-                }
-              />
+              <div className="flex items-center gap-4">
+                {currentImage && !imageFile && (
+                  <img
+                    src={currentImage}
+                    alt={item?.nameEn}
+                    className="bg-muted h-24 w-32 rounded-md object-cover"
+                  />
+                )}
+                {imageFile && (
+                  <div className="bg-muted h-24 w-32 rounded-md flex flex-col items-center justify-center text-xs text-muted-foreground">
+                    <span className="font-semibold text-foreground text-center line-clamp-2 px-2">{imageFile.name}</span>
+                    <span>Ready to upload</span>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    className={currentImage || imageFile ? "hidden" : ""}
+                    onChange={(event) =>
+                      setImageFile(event.target.files?.[0] ?? undefined)
+                    }
+                  />
+                  {(currentImage || imageFile) && (
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <label htmlFor="image" className="cursor-pointer">Change Image</label>
+                    </Button>
+                  )}
+                </div>
+              </div>
             </Field>
             <Field orientation="horizontal">
               <Switch

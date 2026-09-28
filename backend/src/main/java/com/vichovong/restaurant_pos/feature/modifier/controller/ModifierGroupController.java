@@ -63,4 +63,13 @@ public class ModifierGroupController {
         modifierGroupService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Modifier group deleted", null));
     }
+
+    @PostMapping(value = "/{groupId}/options/{optionId}/image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<com.vichovong.restaurant_pos.feature.modifier.dto.ModifierOptionResponse>> uploadOptionImage(
+            @PathVariable UUID groupId,
+            @PathVariable UUID optionId,
+            @org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        return ResponseEntity.ok(ApiResponse.success("Image uploaded", modifierGroupService.uploadOptionImage(groupId, optionId, file)));
+    }
 }

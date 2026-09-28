@@ -13,11 +13,16 @@ import com.vichovong.restaurant_pos.feature.modifier.repository.MenuItemModifier
 import com.vichovong.restaurant_pos.feature.modifier.repository.ModifierGroupRepository;
 import com.vichovong.restaurant_pos.feature.modifier.service.ModifierGroupService;
 import lombok.RequiredArgsConstructor;
+import com.vichovong.restaurant_pos.feature.modifier.dto.ModifierOptionResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,6 +38,9 @@ public class ModifierGroupServiceImpl implements ModifierGroupService {
     private final ModifierGroupRepository modifierGroupRepository;
     private final MenuItemModifierGroupRepository menuItemModifierGroupRepository;
     private final ModifierMapper modifierMapper;
+
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
 
     @Override
     public PageResponse<ModifierGroupResponse> getAll(Pageable pageable) {
@@ -145,5 +153,56 @@ public class ModifierGroupServiceImpl implements ModifierGroupService {
     private ModifierGroup findGroup(UUID id) {
         return modifierGroupRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Modifier group not found: " + id));
+    }
+
+    @Override
+    @Transactional
+    public ModifierOptionResponse uploadOptionImage(UUID groupId, UUID optionId, MultipartFile file) {
+        ModifierGroup group = findGroup(groupId);
+        ModifierOption targetOption = group.getOptions().stream()
+                .filter(opt -> opt.getId().equals(optionId))
+                .findFirst()
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Modifier option not found in this group: " + optionId));
+
+        if (file.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Uploaded file is empty");
+        }
+
+        try {
+            Path dir = Path.of(uploadDir, "modifier-options", optionId.toString());
+            Path cardDir = dir.resolve("card");
+            Path thumbDir = dir.resolve("thumb");
+            Files.createDirectories(dir);
+            Files.createDirectories(cardDir);
+            Files.createDirectories(thumbDir);
+
+            String filename = UUID.randomUUID() + "-" + org.springframework.util.StringUtils.cleanPath(
+                    org.springframework.util.StringUtils.hasText(file.getOriginalFilename()) ? file.getOriginalFilename() : "image");
+            
+            Path baseTarget = dir.resolve(filename);
+            Path cardTarget = cardDir.resolve(filename);
+            Path thumbTarget = thumbDir.resolve(filename);
+
+            net.coobird.thumbnailator.Thumbnails.of(file.getInputStream())
+                    .useExifOrientation(true)
+                    .size(800, 800)
+                    .toFile(baseTarget.toFile());
+
+            net.coobird.thumbnailator.Thumbnails.of(baseTarget.toFile())
+                    .size(512, 512)
+                    .toFile(cardTarget.toFile());
+
+            net.coobird.thumbnailator.Thumbnails.of(baseTarget.toFile())
+                    .size(96, 96)
+                    .toFile(thumbTarget.toFile());
+
+            targetOption.setImageUrl("/uploads/modifier-options/" + optionId + "/" + filename);
+        } catch (net.coobird.thumbnailator.tasks.UnsupportedFormatException e) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Unsupported image format or invalid image");
+        } catch (java.io.IOException e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store image: " + e.getMessage());
+        }
+
+        return modifierMapper.toResponse(targetOption);
     }
 }

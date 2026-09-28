@@ -82,6 +82,7 @@ export function MenuItemsPage() {
           price: item.price!,
           currencyCode: item.currencyCode!,
           categoryId: item.categoryId!,
+          station: item.station ?? "KITCHEN",
           available,
         },
       },

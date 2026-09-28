@@ -37,7 +37,6 @@ public class GuestPromoController {
         }
         GuestPromo promo = GuestPromo.builder()
                 .title(dto.getTitle())
-                .description(dto.getDescription())
                 .imageUrl(dto.getImageUrl())
                 .isActive(dto.isActive())
                 .build();
@@ -51,7 +50,6 @@ public class GuestPromoController {
                 deactivateAll();
             }
             promo.setTitle(dto.getTitle());
-            promo.setDescription(dto.getDescription());
             promo.setImageUrl(dto.getImageUrl());
             promo.setActive(dto.isActive());
             return ResponseEntity.ok(ApiResponse.success(repository.save(promo)));

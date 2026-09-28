@@ -110,12 +110,35 @@ public class MenuItemServiceImpl implements MenuItemService {
 
         try {
             Path dir = Path.of(uploadDir, "menu-items", id.toString());
+            Path cardDir = dir.resolve("card");
+            Path thumbDir = dir.resolve("thumb");
             Files.createDirectories(dir);
+            Files.createDirectories(cardDir);
+            Files.createDirectories(thumbDir);
+
             String filename = UUID.randomUUID() + "-" + StringUtils.cleanPath(
                     StringUtils.hasText(file.getOriginalFilename()) ? file.getOriginalFilename() : "image");
-            Path target = dir.resolve(filename);
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            
+            Path baseTarget = dir.resolve(filename);
+            Path cardTarget = cardDir.resolve(filename);
+            Path thumbTarget = thumbDir.resolve(filename);
+
+            net.coobird.thumbnailator.Thumbnails.of(file.getInputStream())
+                    .useExifOrientation(true)
+                    .size(800, 800)
+                    .toFile(baseTarget.toFile());
+
+            net.coobird.thumbnailator.Thumbnails.of(baseTarget.toFile())
+                    .size(512, 512)
+                    .toFile(cardTarget.toFile());
+
+            net.coobird.thumbnailator.Thumbnails.of(baseTarget.toFile())
+                    .size(96, 96)
+                    .toFile(thumbTarget.toFile());
+
             menuItem.setImageUrl("/uploads/menu-items/" + id + "/" + filename);
+        } catch (net.coobird.thumbnailator.tasks.UnsupportedFormatException e) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Unsupported image format or invalid image");
         } catch (IOException e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store image: " + e.getMessage());
         }
