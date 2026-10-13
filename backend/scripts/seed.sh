@@ -89,16 +89,17 @@ category() { # category <nameEn> <sortOrder> [description] [allowNotes]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-menu_item() { # menu_item <nameEn> <price> <categoryId> [descriptionEn] [imageFile]
+menu_item() { # menu_item <nameEn> <price> <categoryId> [descriptionEn] [imageFile] [station]
     local img_url=""
     if [[ $# -ge 5 && -n "$5" ]]; then
         img_url="/food-images/$5"
     fi
+    local station="${6:-KITCHEN}"
     local res
-    res=$(post /api/v1/menu-items "$(jq -n --arg n "$1" --arg p "$2" --arg c "$3" --arg d "${4:-}" --arg img "$img_url" \
+    res=$(post /api/v1/menu-items "$(jq -n --arg n "$1" --arg p "$2" --arg c "$3" --arg d "${4:-}" --arg img "$img_url" --arg st "$station" \
         '{nameEn: $n, nameKm: $n, descriptionEn: $d, descriptionKm: $d, price: ($p|tonumber),
-          currencyCode: "USD", imageUrl: (if $img == "" then null else $img end), available: true, categoryId: $c}')")
-    echo "  ✓ item      $1 (\$$2)" >&2
+          currencyCode: "USD", imageUrl: (if $img == "" then null else $img end), available: true, categoryId: $c, station: $st}')")
+    echo "  ✓ item      $1 (\$$2) [$station]" >&2
     local item_id
     item_id=$(id_of "$res")
     if [[ $# -ge 5 && -n "$5" ]]; then
@@ -180,21 +181,21 @@ GRP_EXTRA=$(modifier_group "Extra Love Add-Ons" 0 3 "$(options 1.58 \
 
 echo "== Menu items =="
 # Free base: a build is priced entirely by the options stacked on it.
-ITEM_DIY=$(menu_item "DIY Malatang" 0.00 "$CAT_DIY" "Build your own Malatang" "diy-malatang.jpg")
-menu_item "Malatang World Football Set" 8.99 "$CAT_COMBO" "2 Signature Malatang + Dumplings + Drink" "combo-set.jpg" >/dev/null
-menu_item "Half Steamed Rice" 0.35 "$CAT_SIDE" "" "steamed-rice.jpg" >/dev/null
-menu_item "Full Steamed Rice" 0.70 "$CAT_SIDE" "" "steamed-rice.jpg" >/dev/null
-menu_item "Sichuan Pork Dumplings" 1.50 "$CAT_SIDE" "" "sichuan-dumplings.jpg" >/dev/null
-menu_item "Prawn Dumplings" 1.50 "$CAT_SIDE" "" "prawn-dumplings.jpg" >/dev/null
-menu_item "Mini Dumplings" 1.50 "$CAT_SIDE" "" "mini-dumplings.jpg" >/dev/null
-menu_item "Pineapple Lemon Jasmine Tea" 1.98 "$CAT_DRINK" "" "pineapple-tea.jpg" >/dev/null
-menu_item "Red Apple Jasmine Tea" 1.98 "$CAT_DRINK" "" "apple-tea.jpg" >/dev/null
-menu_item "Honey Lemon Kiss" 1.98 "$CAT_DRINK" "" "honey-lemon.jpg" >/dev/null
-menu_item "Cambodia Water" 1.00 "$CAT_SOFT" "" "cambodia-water.jpg" >/dev/null
-menu_item "Cambodia Cola" 1.00 "$CAT_SOFT" "" "cambodia-cola.jpg" >/dev/null
-menu_item "Coca-Cola Classic" 1.00 "$CAT_SOFT" "" "coca-cola.jpg" >/dev/null
-menu_item "Jia Duo Bao" 1.20 "$CAT_SOFT" "" "herbal-tea.jpg" >/dev/null
-menu_item "Big Heart Lollipop" 1.00 "$CAT_CANDY" "" "lollipop.jpg" >/dev/null
+ITEM_DIY=$(menu_item "DIY Malatang" 0.00 "$CAT_DIY" "Build your own Malatang" "diy-malatang.jpg" "KITCHEN")
+menu_item "Malatang World Football Set" 8.99 "$CAT_COMBO" "2 Signature Malatang + Dumplings + Drink" "combo-set.jpg" "KITCHEN" >/dev/null
+menu_item "Half Steamed Rice" 0.35 "$CAT_SIDE" "" "steamed-rice.jpg" "KITCHEN" >/dev/null
+menu_item "Full Steamed Rice" 0.70 "$CAT_SIDE" "" "steamed-rice.jpg" "KITCHEN" >/dev/null
+menu_item "Sichuan Pork Dumplings" 1.50 "$CAT_SIDE" "" "sichuan-dumplings.jpg" "KITCHEN" >/dev/null
+menu_item "Prawn Dumplings" 1.50 "$CAT_SIDE" "" "prawn-dumplings.jpg" "KITCHEN" >/dev/null
+menu_item "Mini Dumplings" 1.50 "$CAT_SIDE" "" "mini-dumplings.jpg" "KITCHEN" >/dev/null
+menu_item "Pineapple Lemon Jasmine Tea" 1.98 "$CAT_DRINK" "" "pineapple-tea.jpg" "COUNTER" >/dev/null
+menu_item "Red Apple Jasmine Tea" 1.98 "$CAT_DRINK" "" "apple-tea.jpg" "COUNTER" >/dev/null
+menu_item "Honey Lemon Kiss" 1.98 "$CAT_DRINK" "" "honey-lemon.jpg" "COUNTER" >/dev/null
+menu_item "Cambodia Water" 1.00 "$CAT_SOFT" "" "cambodia-water.jpg" "COUNTER" >/dev/null
+menu_item "Cambodia Cola" 1.00 "$CAT_SOFT" "" "cambodia-cola.jpg" "COUNTER" >/dev/null
+menu_item "Coca-Cola Classic" 1.00 "$CAT_SOFT" "" "coca-cola.jpg" "COUNTER" >/dev/null
+menu_item "Jia Duo Bao" 1.20 "$CAT_SOFT" "" "herbal-tea.jpg" "COUNTER" >/dev/null
+menu_item "Big Heart Lollipop" 1.00 "$CAT_CANDY" "" "lollipop.jpg" "COUNTER" >/dev/null
 
 # --- 4. attach modifier groups to DIY Malatang -------------------------------
 
