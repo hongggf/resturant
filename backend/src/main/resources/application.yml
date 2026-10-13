@@ -53,5 +53,5 @@ app:
     password: ${ADMIN_PASSWORD:Admin@123}
   cors:
     # Comma-separated origin patterns. Dev-only defaults below —
-    # in production, set CORS_ALLOWED_ORIGINS in the environment (e.g. https://vongpos.com).
+    # in production, set CORS_ALLOWED_ORIGINS in the environment (e.g. https://malatang.com).
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}

@@ -9,7 +9,7 @@ interface LanguageContextType {
   t: (key: string, options?: string | { defaultValue?: string }) => string
 }
 
-const STORAGE_KEY = "vongpos_guest_language"
+const STORAGE_KEY = "malatang_guest_language"
 
 const translations: Record<string, { en: string; km: string }> = {
   menu: { en: "Menu", km: "ម៉ឺនុយ" },

@@ -240,8 +240,7 @@ chmod +x ./backend/scripts/seed.sh
 ## 🔑 Default Credentials & Access Points
 
 | Service / Interface | URL | Credentials / Notes |
-|---|---|---|
-| **Frontend Web App** | `http://localhost:5173` *(dev)* or `https://vongpos.com` *(prod)* | Redirects to role landing / login |
+| **Frontend Web App** | `http://localhost:5173` *(dev)* or `http://localhost` *(Docker / prod)* | Redirects to role landing / login |
 | **Admin & Cashier Login** | `/login` | **Username:** `admin`<br>**Password:** `Admin@123` *(dev default)* |
 | **Customer QR Ordering** | `/guest?token=<qrToken>` | Token generated automatically per table |
 | **Backend REST API** | `http://localhost:8080/api/v1` | Public and Authenticated routes |
@@ -310,7 +309,7 @@ Configuration is managed via the root `.env` file:
 
 ## 🚢 Production Deployment & Hosting
 
-- **Laptop Hosting via Cloudflare Tunnels**: This system is self-hosted locally on a roaming Ubuntu laptop. It uses Cloudflare Tunnels (`cloudflared` in `docker-compose.yml`) to securely expose the application to the internet (`vongpos.com`) without opening router ports or requiring a static IP.
+- **Laptop Hosting via Cloudflare Tunnels**: This system is self-hosted locally on a roaming Ubuntu laptop. It uses Cloudflare Tunnels (`cloudflared` in `docker-compose.yml`) to securely expose the application to the internet (or custom domain) without opening router ports or requiring a static IP.
 - **SSL / HTTPS**: SSL certificates and HTTPS termination are handled automatically by Cloudflare. The local `nginx.conf` is configured to run plain HTTP, which Cloudflare encrypts securely.
 - **Deploying Updates**: Because the host is a roaming laptop, the old GitHub Actions automated SSH deployment has been disabled. To deploy new code, simply pull the latest `main` branch on the host machine and run `docker compose up -d --build`.
 - **Database Port**: The PostgreSQL database exposes port `5435` instead of the default `5432` to intentionally prevent collisions with other local AI and microservice projects running on the same laptop.

@@ -12,7 +12,7 @@ export default defineConfig({
         target: 'http://localhost:80',
         changeOrigin: true,
         headers: {
-          Origin: 'https://vongpos.com'
+          Origin: 'http://localhost:80'
         },
         configure: (proxy) => {
           proxy.on('proxyRes', (proxyRes, req) => {
@@ -24,7 +24,7 @@ export default defineConfig({
         target: 'http://localhost:80',
         changeOrigin: true,
         headers: {
-          Origin: 'https://vongpos.com'
+          Origin: 'http://localhost:80'
         },
         configure: (proxy) => {
           proxy.on('proxyRes', (proxyRes, req) => {

@@ -119,7 +119,7 @@ describe('<GuestItemDialog />', () => {
   })
 
   it('renders Khmer title on top and English name on bottom when language is Khmer', () => {
-    localStorage.setItem('vongpos_guest_language', 'km')
+    localStorage.setItem('malatang_guest_language', 'km')
     render(
       <LanguageProvider>
         <GuestItemDialog item={mockItem} onOpenChange={mockOnOpenChange} />
@@ -128,7 +128,7 @@ describe('<GuestItemDialog />', () => {
 
     expect(screen.getByRole('heading', { name: 'ស៊ុបម៉ាឡាថាំង' })).toBeInTheDocument()
     expect(screen.getByText(/\$5\.00 · Beef Malatang/)).toBeInTheDocument()
-    localStorage.removeItem('vongpos_guest_language')
+    localStorage.removeItem('malatang_guest_language')
   })
 
   it('shows loading spinner when menu item detail is pending', () => {

@@ -15,8 +15,8 @@
 #
 # Dry run by default; re-runnable, because it only writes what is still wrong.
 #
-#   BASE_URL=https://vongpos.com ADMIN_PASS=… ./scripts/reconcile-menu.sh
-#   BASE_URL=https://vongpos.com ADMIN_PASS=… ./scripts/reconcile-menu.sh --apply
+#   BASE_URL=http://localhost:8080 ADMIN_PASS=… ./scripts/reconcile-menu.sh
+#   BASE_URL=http://localhost:8080 ADMIN_PASS=… ./scripts/reconcile-menu.sh --apply
 set -euo pipefail
 
 BASE="${BASE_URL:-http://localhost:8080}"
